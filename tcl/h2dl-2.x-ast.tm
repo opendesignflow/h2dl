@@ -1,13 +1,13 @@
 ## The AST Package provides the core tree syntax modelisation
-package provide odfi::dev::hw::h2dl::ast 2.0.0
+package provide odfi::h2dl::ast 2.0.0
 package require odfi::attributes 2.0.0
 package require odfi::flextree 1.0.0
 
-namespace eval odfi::dev::hw::h2dl::ast {
+namespace eval odfi::h2dl::ast {
 
     proc astOperatorToNode operator {
 
-        puts "Operator : $operator"
+        #puts "Operator : $operator"
         if {$operator!= "*"  && [odfi::common::isClass $operator odfi::flextree::FlexNode]} {
             #puts "$operator is a class"
             return $operator
@@ -205,7 +205,7 @@ namespace eval odfi::dev::hw::h2dl::ast {
                     set operatorNode [astOperatorToNode $operator]
                     
                     ## If not an ASTOperator, then it is a value holder from which we want to select 
-                    if {![$operatorNode isClass odfi::dev::hw::h2dl::ast::ASTOperator]} {
+                    if {![$operatorNode isClass odfi::h2dl::ast::ASTOperator]} {
                         set source $operatorNode
                         set operatorNode [ASTSelect new]
                         $operatorNode addChild $source
@@ -239,7 +239,7 @@ namespace eval odfi::dev::hw::h2dl::ast {
                     set operatorNode [astOperatorToNode $operator]
                     
                     ## If not an ASTOperator, then it is a value holder from which we want to select 
-                    if {![$operatorNode isClass odfi::dev::hw::h2dl::ast::ASTOperator]} {
+                    if {![$operatorNode isClass odfi::h2dl::ast::ASTOperator]} {
                         
                         #set source $operatorNode
                         #set operatorNode [ASTSelect new]
@@ -248,7 +248,7 @@ namespace eval odfi::dev::hw::h2dl::ast {
                         ## If the first node is an operator, then use it as source
                         ## The right part becomes the operator + right
                         set firstNodeOperator [astOperatorToNode $left]
-                        if {[$firstNodeOperator isClass odfi::dev::hw::h2dl::ast::ASTOperator]} {
+                        if {[$firstNodeOperator isClass odfi::h2dl::ast::ASTOperator]} {
                             set operatorNode $firstNodeOperator
                             set right  [concat $operator [list $right]] 
                             set left   ""
@@ -302,7 +302,7 @@ namespace eval odfi::dev::hw::h2dl::ast {
         }
         
         #
-        puts "Top parent is of type: [$topParent info class]"
+        #puts "Top parent is of type: [$topParent info class]"
          #puts "Left: [$topParent firstChild]"
         #                puts "Rifht: [$topParent lastChild]"
         return $topParent

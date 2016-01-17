@@ -1,11 +1,26 @@
-package provide odfi::dev::hw::h2dl 2.0.0
+# ODFI H2DL
+# Copyright (C) 2016 Richard Leys  <leys.richard@gmail.com> , University of Karlsruhe  - Asic and Detector Lab Group
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+package provide odfi::h2dl 2.0.0
 
 package require odfi::language 1.0.0
 package require odfi::nx::domainmixin
-#package require odfi::dev::hw::h2dl::verilog 2.0.0
-package require odfi::dev::hw::h2dl::ast  2.0.0
+#package require odfi::h2dl::verilog 2.0.0
+package require odfi::h2dl::ast  2.0.0
 
-namespace eval odfi::dev::hw::h2dl {
+namespace eval odfi::h2dl {
     
         
 
@@ -46,11 +61,11 @@ namespace eval odfi::dev::hw::h2dl {
                 
                 ## Look for name
                 puts "looking for elaboration: $name, master is $master" 
-                set allElabs [$master shade odfi::dev::hw::h2dl::Elaboration children]
+                set allElabs [$master shade odfi::h2dl::Elaboration children]
                 $allElabs foreach {
                     puts "Elab [$it name get]"
                 }
-                set elaboration [$master shade odfi::dev::hw::h2dl::Elaboration findChildByProperty name $name]
+                set elaboration [$master shade odfi::h2dl::Elaboration findChildByProperty name $name]
                 if {$elaboration!=""} {
                     puts "Elaborating $elaboration"
                     return [$elaboration elaborate]
@@ -96,7 +111,7 @@ namespace eval odfi::dev::hw::h2dl {
             ## Return only parents with Module hierarchy
             #+method formatHierarchyString separator {
 
-             #   set parents [:shade odfi::dev::hw::h2dl::Module getPrimaryParents]
+             #   set parents [:shade odfi::h2dl::Module getPrimaryParents]
               #  return [[$parents map { return [$it name get]}] mkString $separator]
 
             #}
@@ -113,7 +128,7 @@ namespace eval odfi::dev::hw::h2dl {
             ## IF
             :if condition {
                 +builder {
-                    set :condition [::odfi::dev::hw::h2dl::ast::buildAST [subst ${:condition}]]
+                    set :condition [::odfi::h2dl::ast::buildAST [subst ${:condition}]]
                     :addChild ${:condition} 
                 }
             }
@@ -165,9 +180,26 @@ namespace eval odfi::dev::hw::h2dl {
                 #puts "IN MASTER [:info class], configuring instance $node"
             }
 
-            +method createInstance args {
+            +method createInstance name {
 
-                return [${:baseClass} createInstance]
+                
+                set newNode [:doCreateInstance $name] 
+
+                $newNode object mixins add Instance
+                catch {$newNode mixins delete Master}
+
+                ## Set master 
+                $newNode master set [current object]
+                #$newNode addParent [current object]
+                    
+                puts "Creating Instance of [:info class], $newNode"
+
+                return $newNode
+                #return [${:baseClass} createInstance]
+            }
+
+            +method doCreateInstance name {
+                next
             }
         }
 
@@ -199,7 +231,7 @@ namespace eval odfi::dev::hw::h2dl {
 
                     ## Build 
                     odfi::closures::protect targetMasterObject
-                    $targetMasterObject object mixins add odfi::dev::hw::h2dl::Master
+                    $targetMasterObject object mixins add odfi::h2dl::Master
                     $targetMasterObject name set $targetMasterObject
                     $targetMasterObject baseClass set $targetClass
                     $targetMasterObject buildMaster
@@ -241,6 +273,8 @@ namespace eval odfi::dev::hw::h2dl {
         +type Instance : H2DLObject  {
             +var master ""
 
+
+
         }
         
 
@@ -248,7 +282,7 @@ namespace eval odfi::dev::hw::h2dl {
 
             ## Filter out masters
             +method findFirstInstanceInHierarchy args {
-                return [:findParentInPrimaryLine { expr {[$it isClass odfi::dev::hw::h2dl::Instance] && ![$it isClass odfi::dev::hw::h2dl::Master]}  }]
+                return [:findParentInPrimaryLine { expr {[$it isClass odfi::h2dl::Instance] && ![$it isClass odfi::h2dl::Master]}  }]
             }
         }
 
@@ -283,7 +317,7 @@ namespace eval odfi::dev::hw::h2dl {
             ## Assignment 
             :assign expression {
                  +builder {
-                     set :expression [::odfi::dev::hw::h2dl::ast::buildAST ${:expression}]
+                     set :expression [::odfi::h2dl::ast::buildAST ${:expression}]
                      :addChild ${:expression}
 
                  }
@@ -315,7 +349,7 @@ namespace eval odfi::dev::hw::h2dl {
                 +builder {
 
                     puts "Building reset with expression ${:expr}"
-                    set expr [::odfi::dev::hw::h2dl::ast::buildAST ${:expr}]
+                    set expr [::odfi::h2dl::ast::buildAST ${:expr}]
                     set :expr $expr
 
                     :addChild $expr
@@ -323,7 +357,7 @@ namespace eval odfi::dev::hw::h2dl {
                     next 
                     return
                     ## FIXME: Idea: Go on all modifiable values on the expression, and add a listener
-                    $expr shade ::odfi::dev::hw::h2dl::Register walkDepthFirst {
+                    $expr shade ::odfi::h2dl::Register walkDepthFirst {
 
                         set reg $node 
 
@@ -370,7 +404,7 @@ namespace eval odfi::dev::hw::h2dl {
 
                     ## Set name 
                     #puts "Signal is: ${:signal} [${:signal} info class] "
-                    if {[odfi::common::isClass ${:signal} ::odfi::dev::hw::h2dl::IO] || [${:signal} isClass ::odfi::dev::hw::h2dl::Signal]} {
+                    if {[odfi::common::isClass ${:signal} ::odfi::h2dl::IO] || [${:signal} isClass ::odfi::h2dl::Signal]} {
                         set baseSignal [:parent]
 
                         #puts "using signal "
@@ -408,6 +442,8 @@ namespace eval odfi::dev::hw::h2dl {
                 set sourceParent [:parent]
                 set source [current object]
                 set targetParent [$sourceParent parent]
+
+                puts "push to target parent: $targetParent, source parent: $sourceParent"
                 set resultSignal ""
                 if {$targetParent!=""} {
 
@@ -459,17 +495,66 @@ namespace eval odfi::dev::hw::h2dl {
         
         :module : Named name {
             
-            #+mixin verilog <- odfi::dev::hw::h2dl::verilog::VerilogGen
-            +mixin Instance
-            +mixin ::odfi::dev::hw::h2dl::Logic
-            +mixin ::odfi::dev::hw::h2dl::Structural
+            #+mixin verilog <- odfi::h2dl::verilog::VerilogGen
+            +mixin Master
+
+            +mixin ::odfi::h2dl::Logic
+            +mixin ::odfi::h2dl::Structural
             +expose name
-            +exportTo         ::odfi::dev::hw::h2dl::Module
+            +exportTo         ::odfi::h2dl::Module
             +exportToPublic
 
             #+builder {
                # puts "Inside Module builder [:info class]"
             #}
+
+            ## Master behavior
+            #######################
+
+            ## When a parent is added, if it is another module, then create an instance instead
+            +builder {
+
+                :onParentAdded {
+                    set p [:noShade parent end]
+                    puts "*** Module added a parent [$p info class]"
+                    ## Only if added to a Module, and we are not a module ourselves already
+                    if {[$p isClass odfi::h2dl::Module] && ![:isClass odfi::h2dl::Instance]} {
+
+                        set instance [:createInstance [:name get]_I]
+                        [current object] detach
+                        #$p removeChild [current object]
+                        $p addChild $instance
+                    }
+                }
+            }
+
+            +method doCreateInstance name {
+                #puts "INSIDE DO CREATE INSTANCE"
+                set newInstance [[:info class] new -name $name]
+                
+                ## Copy/Import all the IOS
+                [:shade odfi::h2dl::IO children] foreach {
+
+                    ## Copy and detach
+                    set nio [$it copy]
+
+                    $nio clearParents
+                    $nio clearChildren
+
+                    ## Rebuild 
+                    $nio +build
+
+                    ## Add to current node 
+                    $newInstance addChild $nio
+
+                    ## Set base IO as parent to find back original definition later
+                    $nio addParent $it
+
+                    ## Res Set IO as class variable again
+                    $newInstance object variable -accessor public [$nio name get] $nio
+                }
+                return $newInstance
+            }
 
             ## In case of master behavior
             +method buildInstance node {
@@ -478,7 +563,7 @@ namespace eval odfi::dev::hw::h2dl {
                 #puts "IN MASTER [:info class], configuring instance $node"
 
                 ## Copy/Import all the IOS
-                [:shade odfi::dev::hw::h2dl::IO children] foreach {
+                [:shade odfi::h2dl::IO children] foreach {
 
                     ## Copy and detach
                     set nio [$it copy]
@@ -527,7 +612,7 @@ namespace eval odfi::dev::hw::h2dl {
                 :highz expr {
                     
                     +builder { 
-                        set :expr [::odfi::dev::hw::h2dl::ast::buildAST ${:expr}]
+                        set :expr [::odfi::h2dl::ast::buildAST ${:expr}]
                         :addChild ${:expr}
 
                         next            
@@ -538,19 +623,19 @@ namespace eval odfi::dev::hw::h2dl {
 
             :register : WritableSignal name {
                 +expose name
-                +exportTo ::odfi::dev::hw::h2dl::Logic
+                +exportTo ::odfi::h2dl::Logic
                 
             }
 
             :wire : Signal name {
                 +expose name
-                +exportTo ::odfi::dev::hw::h2dl::Logic
+                +exportTo ::odfi::h2dl::Logic
             }
 
             ## Named Value is like a constant with a name 
             ## Can map to Verilog Define or localparam for example
             :namedValue name value {
-                +exportTo ::odfi::dev::hw::h2dl::Logic
+                +exportTo ::odfi::h2dl::Logic
             }
 
             :+type SyncBlock : Logic  {
@@ -577,23 +662,23 @@ namespace eval odfi::dev::hw::h2dl {
             #######################
             :stage : Posedge name signal {
                 +exportTo Logic
-                +mixin ::odfi::dev::hw::h2dl::Structural
+                +mixin ::odfi::h2dl::Structural
                 #+var reset ""
 
                 +builder {
 
                     ## Signal Can be an expression 
-                    set :signal [::odfi::dev::hw::h2dl::ast::buildAST [subst ${:signal}] ]
+                    set :signal [::odfi::h2dl::ast::buildAST [subst ${:signal}] ]
 
                     ## Transform to negedge if necessary
-                    if {[${:signal} isClass odfi::dev::hw::h2dl::ast::ASTNegate]} {
+                    if {[${:signal} isClass odfi::h2dl::ast::ASTNegate]} {
                         set :signal [${:signal} firstChild]
-                        :object mixins add ::odfi::dev::hw::h2dl::Negedge
+                        :object mixins add ::odfi::h2dl::Negedge
                     }
                     :onBuildDone {
 
                         ## Get All Signals and Move them up 
-                        set signals [:shade odfi::dev::hw::h2dl::Signal children ]
+                        set signals [:shade odfi::h2dl::Signal children ]
 
                         ## Move them to parent, and change the name 
                         $signals foreach {
@@ -620,8 +705,8 @@ namespace eval odfi::dev::hw::h2dl {
                         puts "Setting up reset for Stage-------------------------"
 
                         ## Content 
-                        #set content [:shade odfi::dev::hw::h2dl::ast::ASTNode children]
-                        set content [:shade {$it notClass odfi::dev::hw::h2dl::Reset} children]
+                        #set content [:shade odfi::h2dl::ast::ASTNode children]
+                        set content [:shade {$it notClass odfi::h2dl::Reset} children]
                          $content foreach {
                                 $it detachFrom [current object] 
                         }
@@ -635,7 +720,7 @@ namespace eval odfi::dev::hw::h2dl {
                         :if {<% return $res %> == 0} {
 
                             $content foreach {
-                                if {[$it isClass odfi::dev::hw::h2dl::ast::ASTNonBlockingAssign]} {
+                                if {[$it isClass odfi::h2dl::ast::ASTNonBlockingAssign]} {
 
                                     [$it firstChild] <= 0
                                 }
@@ -666,8 +751,8 @@ namespace eval odfi::dev::hw::h2dl {
 
         odfi::language::Language default {
 
-            :fsm : ::odfi::dev::hw::h2dl::Logic name {
-                +exportTo ::odfi::dev::hw::h2dl::Logic
+            :fsm : ::odfi::h2dl::Logic name {
+                +exportTo ::odfi::h2dl::Logic
                 +expose name
                 #:input name default {
                 #    +expose
@@ -680,7 +765,7 @@ namespace eval odfi::dev::hw::h2dl {
                     :onBuildDone {
 
                         set states [odfi::flist::MutableList new]
-                        :shade ::odfi::dev::hw::h2dl::fsm::State walkDepthFirstPostorder {
+                        :shade ::odfi::h2dl::fsm::State walkDepthFirstPostorder {
                             $states += $node
                             return true
                         }
@@ -705,7 +790,7 @@ namespace eval odfi::dev::hw::h2dl {
                         :on expression {
          
                             +builder {
-                                set :expression [::odfi::dev::hw::h2dl::ast::buildAST ${:expression}]
+                                set :expression [::odfi::h2dl::ast::buildAST ${:expression}]
 
                                 #puts "Left: [${:expression} firstChild]"
                                 #puts "Rifht: [${:expression} lastChild]"
@@ -720,12 +805,12 @@ namespace eval odfi::dev::hw::h2dl {
                             [:parent] onBuildDone {
                               
                            # puts "------- Doing progress with size [[:children] size]"
-                            set states [:shade odfi::dev::hw::h2dl::fsm::State children]
+                            set states [:shade odfi::h2dl::fsm::State children]
                             if {[$states size]>1 || [$states size]==0} {
                                 odfi::log::error "Progress utility can only be used if one sub-state is defined"
                             } else {
                                 set targetState [$states first]
-                                set progressNode [:shade odfi::dev::hw::h2dl::fsm::ProgressOn firstChild]
+                                set progressNode [:shade odfi::h2dl::fsm::ProgressOn firstChild]
                                 :goto [$targetState name get] {
                                     #foreach expr [$progressNode conditions get] {
                                        # puts "On Expression: [$progressNode conditions get]"
@@ -741,19 +826,19 @@ namespace eval odfi::dev::hw::h2dl {
                         
                     }
 
-                    :do : ::odfi::dev::hw::h2dl::Logic {
+                    :do : ::odfi::h2dl::Logic {
 
                     }
 
-                    :entering  : ::odfi::dev::hw::h2dl::Logic {
+                    :entering  : ::odfi::h2dl::Logic {
 
                     }
 
-                    :leaving  : ::odfi::dev::hw::h2dl::Logic {
+                    :leaving  : ::odfi::h2dl::Logic {
 
                     }
 
-                    :oppositePhase : ::odfi::dev::hw::h2dl::Logic {
+                    :oppositePhase : ::odfi::h2dl::Logic {
 
                     }
                 }
@@ -768,7 +853,7 @@ namespace eval odfi::dev::hw::h2dl {
                     set fsm [current object]
                     ## First: Take out the registers 
                     ##########
-                    :shade ::odfi::dev::hw::h2dl::Signal eachChild {
+                    :shade ::odfi::h2dl::Signal eachChild {
                         $it detachFrom $fsm
                         $tparent addChild $it
                     }
@@ -776,7 +861,7 @@ namespace eval odfi::dev::hw::h2dl {
                     ## Gather All States 
                     #############
                     set states [odfi::flist::MutableList new]
-                    :shade ::odfi::dev::hw::h2dl::fsm::State walkDepthFirstPostorder {
+                    :shade ::odfi::h2dl::fsm::State walkDepthFirstPostorder {
                         #puts "Found State"
                         $states += $node
                         return true
@@ -796,12 +881,12 @@ namespace eval odfi::dev::hw::h2dl {
                     #########
                     set inputs [odfi::flist::MutableList new]
                     #:walkDepthFirstPostorder {
-                    #    if {[$node isClass ::odfi::dev::hw::h2dl::fsm::On]} {
+                    #    if {[$node isClass ::odfi::h2dl::fsm::On]} {
                     #        puts "Found On condition with expression: [$node expression get] ([[$node expression get] info class]), first child [[$node expression get] firstChild]"
                     #    }
                     #}
-                    :shade ::odfi::dev::hw::h2dl::fsm::On walkDepthFirstPostorder {
-                        #puts "Found On condition with expression: [$node expression get] ([[$node expression get] info class]), first child [[$node expression get] shade odfi::dev::hw::h2dl::Signal firstChild]"
+                    :shade ::odfi::h2dl::fsm::On walkDepthFirstPostorder {
+                        #puts "Found On condition with expression: [$node expression get] ([[$node expression get] info class]), first child [[$node expression get] shade odfi::h2dl::Signal firstChild]"
                         $inputs += [[$node expression get] firstChild]
                     }
                     set inputs [$inputs compact]
@@ -834,7 +919,7 @@ namespace eval odfi::dev::hw::h2dl {
                                 ##   - Add 
 
                                 ## Get Do 
-                                set dos [$state shade ::odfi::dev::hw::h2dl::fsm::Do  children]
+                                set dos [$state shade ::odfi::h2dl::fsm::Do  children]
 
                                 ## Create On 
                                 #set on [:on "{$i,[lrepeat [$inputs size] x]}" {
@@ -847,7 +932,7 @@ namespace eval odfi::dev::hw::h2dl {
 
                                 ## Transitions 
                                 ###################
-                                $state shade ::odfi::dev::hw::h2dl::fsm::Goto eachChild {
+                                $state shade ::odfi::h2dl::fsm::Goto eachChild {
 
                                     {goto gototi} => 
 
@@ -857,7 +942,7 @@ namespace eval odfi::dev::hw::h2dl {
                                         set inputValue [lrepeat [$inputs size] x]
 
                                         ## Find all Ons for this transition 
-                                        $goto shade ::odfi::dev::hw::h2dl::fsm::On eachChild {
+                                        $goto shade ::odfi::h2dl::fsm::On eachChild {
                                             
                                             {on oni} => 
 
@@ -865,9 +950,9 @@ namespace eval odfi::dev::hw::h2dl {
                                                 set onExpression [$on expression get]
                                                 set targetInput [$onExpression firstChild]
                                                 set value 0 
-                                                if {[$onExpression isClass ::odfi::dev::hw::h2dl::ast::ASTNegate]} {
+                                                if {[$onExpression isClass ::odfi::h2dl::ast::ASTNegate]} {
                                                     set value 0
-                                                } elseif {[$onExpression isClass ::odfi::dev::hw::h2dl::ast::ASTCompare] && [[$onExpression lastChild] isClass ::odfi::dev::hw::h2dl::ast::ASTConstant] } {
+                                                } elseif {[$onExpression isClass ::odfi::h2dl::ast::ASTCompare] && [[$onExpression lastChild] isClass ::odfi::h2dl::ast::ASTConstant] } {
                                                     set value [[$onExpression lastChild] constant get]
                                                 }  else {
                                                     error "Transition on can only be an expression negating a signal or comparing to a constant"
@@ -886,15 +971,15 @@ namespace eval odfi::dev::hw::h2dl {
 
                                         ## Get the entering of the target state 
                                         set targetState [$states find { expr {[$it name get] } == { [$goto to get] } } ]
-                                        set requirements [[$targetState shade ::odfi::dev::hw::h2dl::fsm::Entering children] map {
+                                        set requirements [[$targetState shade ::odfi::h2dl::fsm::Entering children] map {
                                             #puts "Filtering BA in requirement: [[$it children] size]"
-                                            return [$it shade ::odfi::dev::hw::h2dl::ast::ASTBlockingAssign children]
+                                            return [$it shade ::odfi::h2dl::ast::ASTBlockingAssign children]
                                         }]
 
                                         ## Get the leaving of current state 
-                                        set leavings [[$state shade ::odfi::dev::hw::h2dl::fsm::Leaving children] map {
+                                        set leavings [[$state shade ::odfi::h2dl::fsm::Leaving children] map {
                                             #puts "Filtering BA in requirement: [[$it children] size]"
-                                            return [$it shade ::odfi::dev::hw::h2dl::ast::ASTBlockingAssign children]
+                                            return [$it shade ::odfi::h2dl::ast::ASTBlockingAssign children]
                                         }]
 
                                         #puts "Setting UP Case option for transition to [$goto to get], state register is $stateRegister -> [$stateRegister name get]"
@@ -911,7 +996,7 @@ namespace eval odfi::dev::hw::h2dl {
                                             
                                                 $it foreach {
                                                
-                                                    set nb [::odfi::dev::hw::h2dl::ast::ASTNonBlockingAssign new]
+                                                    set nb [::odfi::h2dl::ast::ASTNonBlockingAssign new]
                                                     $nb addChild [$it firstChild]
                                                     $nb addChild [$it lastChild]
                                                     #$it detach
@@ -925,7 +1010,7 @@ namespace eval odfi::dev::hw::h2dl {
                                              puts "In Requirement, nbs: [$req size]"
                                              $req foreach {
                                                
-                                                set nb [::odfi::dev::hw::h2dl::ast::ASTNonBlockingAssign new]
+                                                set nb [::odfi::h2dl::ast::ASTNonBlockingAssign new]
                                                 $nb addChild [$it firstChild]
                                                 $nb addChild [$it lastChild]
                                                 $it detach
@@ -949,7 +1034,7 @@ namespace eval odfi::dev::hw::h2dl {
                         ## Gather All DO 
                         ############
                         set dos [odfi::flist::MutableList new]
-                        :shade ::odfi::dev::hw::h2dl::fsm::Do walkDepthFirstPostorder {
+                        :shade ::odfi::h2dl::fsm::Do walkDepthFirstPostorder {
                             $dos += $node
                         }
                         if {[$dos size]==0} {
@@ -963,7 +1048,7 @@ namespace eval odfi::dev::hw::h2dl {
             }
 
         }
-        #odfi::dev::hw::h2dl::Module domain-mixins add odfi::dev::hw::h2dl::fsm::Fsm
+        #odfi::h2dl::Module domain-mixins add odfi::h2dl::fsm::Fsm
         
     }
     
@@ -993,7 +1078,7 @@ namespace eval odfi::dev::hw::h2dl {
 
         #odfi::language::Language default {
 #
-        #    :$name : ::odfi::dev::hw::h2dl::Module name {
+        #    :$name : ::odfi::h2dl::Module name {
 #
          #       +builder $closure
 #
@@ -1020,7 +1105,7 @@ namespace eval odfi::dev::hw::h2dl {
 
             ## Check if there is a master
             ## If not, keep building
-            #set masterParent [:shade odfi::dev::hw::h2dl::Master parent]
+            #set masterParent [:shade odfi::h2dl::Master parent]
             #if {$masterParent!=""} {
             #    puts "Building Module Instance ${:name} with parent, only keeping IOs"
             #} else {
@@ -1031,13 +1116,13 @@ namespace eval odfi::dev::hw::h2dl {
         set code "
            odfi::language::Language default {
 
-            :$name : ::odfi::dev::hw::h2dl::Module  name $args {
+            :$name : ::odfi::h2dl::Module  name $args {
 
                 #puts \"Inside module def with args \${args}\"
                 :$instanceNameMethod
                 :+exportToParent 
                 :+expose name
-                :+superclass  ::odfi::dev::hw::h2dl::MasterSupported
+                :+superclass  ::odfi::h2dl::MasterSupported
                 +method buildMaster args {
                     $closure
                 }
@@ -1055,7 +1140,7 @@ namespace eval odfi::dev::hw::h2dl {
         #puts "Created MDef with $code "
         uplevel $code
         #uplevel [list odfi::language::Language default [list \
-        #    :$name : ::odfi::dev::hw::h2dl::Module name $args [list \
+        #    :$name : ::odfi::h2dl::Module name $args [list \
         #    :+builder $closure ; \
         #     ] \
          #   ]]
@@ -1078,10 +1163,10 @@ namespace eval odfi::dev::hw::h2dl {
             #puts "Expression for Updating [:name get] $args"
             
             ## Create Node for this update 
-            set astNode [::odfi::dev::hw::h2dl::ast::ASTNonBlockingAssign new]
+            set astNode [::odfi::h2dl::ast::ASTNonBlockingAssign new]
 
             ## Create Expression node 
-            set expressionNode [::odfi::dev::hw::h2dl::ast::buildAST $args]
+            set expressionNode [::odfi::h2dl::ast::buildAST $args]
             $expressionNode  object mixins add odfi::flextree::utils::StdoutPrinter
 
 #puts "NB expression: [$expressionNode info class]"
@@ -1109,10 +1194,10 @@ namespace eval odfi::dev::hw::h2dl {
         :public method < {intoBit keywork fromBit args} {
 
             ## Create Node for this update 
-            set astNode [::odfi::dev::hw::h2dl::ast::ASTNonBlockingAssign new -fromBitRange $fromBit -toBitRange $intoBit]
+            set astNode [::odfi::h2dl::ast::ASTNonBlockingAssign new -fromBitRange $fromBit -toBitRange $intoBit]
 
             ## Create Expression node 
-            set expressionNode [::odfi::dev::hw::h2dl::ast::buildAST $args]
+            set expressionNode [::odfi::h2dl::ast::buildAST $args]
             $expressionNode  object mixins add odfi::flextree::utils::StdoutPrinter
 
             ## Left: Target Register 
@@ -1133,14 +1218,14 @@ namespace eval odfi::dev::hw::h2dl {
             #puts "Expression for Updating [:name get] $args"
             
             ## Create Node for this update 
-            set astNode [::odfi::dev::hw::h2dl::ast::ASTBlockingAssign new]
+            set astNode [::odfi::h2dl::ast::ASTBlockingAssign new]
 
             #:eachChild {
             #    puts "Child for clk before expr: [$it info class]"
             #}
 
             ## Create Expression node 
-            set expressionNode [::odfi::dev::hw::h2dl::ast::buildAST $args]
+            set expressionNode [::odfi::h2dl::ast::buildAST $args]
             $expressionNode  object mixins add odfi::flextree::utils::StdoutPrinter
 
             #:eachChild {

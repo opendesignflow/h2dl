@@ -1,10 +1,10 @@
 ## The AST Package provides the core tree syntax modelisation
-package provide odfi::dev::hw::h2dl::sim1 2.0.0
-package require odfi::dev::hw::h2dl 2.0.0
-package require odfi::dev::hw::h2dl::sim::vcd 2.0.0
+package provide odfi::h2dl::sim1 2.0.0
+package require odfi::h2dl:: 2.0.0
+package require odfi::h2dl::sim::vcd 2.0.0
 
 
-namespace eval  odfi::dev::hw::h2dl::sim1 {
+namespace eval  odfi::h2dl::sim1 {
 
 
     variable currentSimulator -1
@@ -72,13 +72,13 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         :public method run {baseNode targetFile}  {
 
-            set odfi::dev::hw::h2dl::sim1::currentSimulator [current object]
+            set odfi::h2dl::sim1::currentSimulator [current object]
 
             odfi::log::info "Running Simulator on node [$baseNode toString]"
 
             ## Prepare VCD File 
             #####################
-            set vcd [::odfi::dev::hw::h2dl::sim::vcd::VCDDump new -targetFile $targetFile]
+            set vcd [::odfi::h2dl::sim::vcd::VCDDump new -targetFile $targetFile]
 
 
             ## Look for the signals to dump 
@@ -86,7 +86,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             odfi::log::info "Looking for signals to dumps "
             $baseNode walkBreadthFirst {
 
-                if {[::odfi::common::isClass $node ::odfi::dev::hw::h2dl::sim1::SimulationDumpable]} {
+                if {[::odfi::common::isClass $node ::odfi::h2dl::sim1::SimulationDumpable]} {
                     $vcd registerDumpSignal $node
                 }
                 return true
@@ -140,7 +140,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
                     #odfi::log::info "(TIME: ${:currentTime}) on node $node // [$node info class] // [$node parent]"
 
-                    if {[::odfi::common::isClass $node ::odfi::dev::hw::h2dl::sim1::SimulationActive]} {
+                    if {[::odfi::common::isClass $node ::odfi::h2dl::sim1::SimulationActive]} {
 
                         set continue false
 
@@ -155,7 +155,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
                             ## Simulation Value Update : Update and don't go further in tree
                             #################################
-                            if {[::odfi::common::isClass $node ::odfi::dev::hw::h2dl::sim1::SimulationValueUpdater]} {
+                            if {[::odfi::common::isClass $node ::odfi::h2dl::sim1::SimulationValueUpdater]} {
 
                                 $node sim:updateValue
                                 #if {[catch {$node sim:updateValue} res]} {
@@ -228,7 +228,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
                     ## update active time and value 
                     #$node lastActiveTime ${:currentTime}
-                    #if {[::odfi::common::isClass $node ::odfi::dev::hw::h2dl::sim1::SimulationValueUpdater]} {
+                    #if {[::odfi::common::isClass $node ::odfi::h2dl::sim1::SimulationValueUpdater]} {
 
                      #   $node sim:updateValue 
 
@@ -355,9 +355,9 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
     }
 
-    odfi::dev::hw::h2dl::Posedge mixins add immediateSchedule
+    odfi::h2dl::Posedge mixins add immediateSchedule
  
-    odfi::dev::hw::h2dl::Posedge public method +build args {
+    odfi::h2dl::Posedge public method +build args {
 
         puts "********* BUILDING Posedge with simulation interface: [[:signal get] info class]  ****************"
         
@@ -368,10 +368,10 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         $signal sim:onValueUpdate {
 
             set signal [:parent]
-            set posedge [[$signal parents get] find { odfi::common::isClass $it odfi::dev::hw::h2dl::Posedge} ]
+            set posedge [[$signal parents get] find { odfi::common::isClass $it odfi::h2dl::Posedge} ]
             puts "********* Activating Posedge for immediate schedule : [$posedge info class] ****************"
             $posedge __activate set true
-            ${odfi::dev::hw::h2dl::sim1::currentSimulator} scheduleNow $posedge
+            ${odfi::h2dl::sim1::currentSimulator} scheduleNow $posedge
 
         }
 
@@ -383,9 +383,9 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             ## Need to get this again, because it is an asynchronous call
             set signal [current object]
             set child [:child end]
-            set valueChild [$signal shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+            set valueChild [$signal shade ::odfi::h2dl::sim1::SimulationValue child 0]
 
-            if {[::odfi::common::isClass $child ::odfi::dev::hw::h2dl::sim1::SimulationValue]} {
+            if {[::odfi::common::isClass $child ::odfi::h2dl::sim1::SimulationValue]} {
 
                 #puts "Added Simulation Value $child , with main value: $valueChild"
 
@@ -400,9 +400,9 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
                     if {$value==1} {
 
                          puts "********* Activating Posedge for immediate schedule  ****************"
-                         set posedge [[$signal parents get] find { odfi::common::isClass $it odfi::dev::hw::h2dl::Posedge} ]
+                         set posedge [[$signal parents get] find { odfi::common::isClass $it odfi::h2dl::Posedge} ]
                          $posedge __activate set true
-                         ${odfi::dev::hw::h2dl::sim1::currentSimulator} scheduleNow $posedge
+                         ${odfi::h2dl::sim1::currentSimulator} scheduleNow $posedge
                          #$__caller __activate set true
 
                     }
@@ -417,10 +417,10 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
                         if {$value==1} {
 
                              
-                             set posedge [[$signal parents get] find { odfi::common::isClass $it odfi::dev::hw::h2dl::Posedge} ]
+                             set posedge [[$signal parents get] find { odfi::common::isClass $it odfi::h2dl::Posedge} ]
                              puts "********* Activating Posedge for immediate schedule : [$posedge info class] ****************"
                              $posedge __activate set true
-                             ${odfi::dev::hw::h2dl::sim1::currentSimulator} scheduleNow $posedge
+                             ${odfi::h2dl::sim1::currentSimulator} scheduleNow $posedge
                              #$__caller __activate set true
 
                         }
@@ -445,7 +445,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         ## IncTime is a list of times
         ## The next time, will always be the current one on the list
-        :every : ::odfi::dev::hw::h2dl::Logic  incTime  {
+        :every : ::odfi::h2dl::Logic  incTime  {
 
             ## The index of the incTime to use
             +var currentIncTime 0
@@ -453,7 +453,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             ## Time of first activation
             +var first 0
 
-            +exportTo ::odfi::dev::hw::h2dl::Module sim
+            +exportTo ::odfi::h2dl::Module sim
             +mixin   SimulationActive
 
             +builder {
@@ -492,10 +492,10 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             }
         }
 
-        :at : ::odfi::dev::hw::h2dl::Logic  absoluteTime {
+        :at : ::odfi::h2dl::Logic  absoluteTime {
 
              +mixin   SimulationActive
-             +exportTo ::odfi::dev::hw::h2dl::Module sim
+             +exportTo ::odfi::h2dl::Module sim
 
 
              +method isActive time {
@@ -515,12 +515,12 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             ## Stop Node 
             :stop  when {
 
-                +mixin  ::odfi::dev::hw::h2dl::sim1::SimulationAlwaysActive
+                +mixin  ::odfi::h2dl::sim1::SimulationAlwaysActive
                 
                 +method interact args {
 
                     puts "*********************************** STOP"
-                    ${odfi::dev::hw::h2dl::sim1::currentSimulator} stop
+                    ${odfi::h2dl::sim1::currentSimulator} stop
 
                     next
                 }
@@ -530,10 +530,10 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         ## Init is an alias for at 0 
         :initial {
-            +exportTo ::odfi::dev::hw::h2dl::Signal sim
+            +exportTo ::odfi::h2dl::Signal sim
 
             +builder {
-                set at [[:parent] addChild [odfi::dev::hw::h2dl::sim1::At new -absoluteTime 0]]
+                set at [[:parent] addChild [odfi::h2dl::sim1::At new -absoluteTime 0]]
                 :detach 
                 $at addChild [current object]
             }
@@ -541,10 +541,10 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         ## Set a value to a node 
         :value val {
-            +exportTo ::odfi::dev::hw::h2dl::Signal sim
+            +exportTo ::odfi::h2dl::Signal sim
 
             +builder {
-                #set v [odfi::dev::hw::h2dl::sim1::SimulationValue new -value ${:val}]
+                #set v [odfi::h2dl::sim1::SimulationValue new -value ${:val}]
                 #[:parent] addChild $v
                 [:parent] sim:setValue ${:val}
                 :detach
@@ -559,15 +559,15 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
     ## Ex: <= or = 
     nx::Class create SimulationValueUpdater -superclass  SimulationAlwaysActive {
 
-        ::odfi::dev::hw::h2dl::ast::ASTNonBlockingAssign mixins add SimulationValueUpdater
-        ::odfi::dev::hw::h2dl::ast::ASTBlockingAssign mixins add SimulationValueUpdater
+        ::odfi::h2dl::ast::ASTNonBlockingAssign mixins add SimulationValueUpdater
+        ::odfi::h2dl::ast::ASTBlockingAssign mixins add SimulationValueUpdater
 
     }
 
     ## SimValue is just a holder node to store simulation values 
     nx::Class create SimulationValue -superclass odfi::flextree::FlexNode {
 
-        :mixins add ::odfi::dev::hw::h2dl::sim::vcd::VCDDumpValue
+        :mixins add ::odfi::h2dl::sim::vcd::VCDDumpValue
         
         :property value:required
 
@@ -626,8 +626,8 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
     }
 
-    ::odfi::dev::hw::h2dl::Signal public method sim:probe args {
-        [current object] object mixins add ::odfi::dev::hw::h2dl::sim1::SimulationDumpable
+    ::odfi::h2dl::Signal public method sim:probe args {
+        [current object] object mixins add ::odfi::h2dl::sim1::SimulationDumpable
     }
 
 
@@ -639,7 +639,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
     ##########
     nx::Class create BlockingUpdateSimSupport {
 
-        odfi::dev::hw::h2dl::ValueHolder mixins add BlockingUpdateSimSupport
+        odfi::h2dl::ValueHolder mixins add BlockingUpdateSimSupport
 
         ## Let normal work, and look for updatable values on the expression side 
         :public method = args {
@@ -650,7 +650,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
             ## Value Update, do it event based 
             ######################
-            ${expressionNode} shade ::odfi::dev::hw::h2dl::Register walkBreadthFirst {
+            ${expressionNode} shade ::odfi::h2dl::Register walkBreadthFirst {
 
                 set reg $node           
 
@@ -706,7 +706,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
     ## Merge values right to left for node
     proc mergeValues node {
 
-        set allValues [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue children]
+        set allValues [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue children]
         if {[$allValues size]>1} {
             set first [$allValues at 0]
             $allValues foreach {
@@ -722,7 +722,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
     ###################################
 
 
-    valueUpdaterBuilder ::odfi::dev::hw::h2dl::ast::ASTNonBlockingAssign {
+    valueUpdaterBuilder ::odfi::h2dl::ast::ASTNonBlockingAssign {
 
 
 
@@ -741,8 +741,8 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         ## Non Blocking: Always add value as an extra node 
         ## There might already be an extra node 
-        set firstValue [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue  child 0] 
-        set lastValue  [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue  child end] 
+        set firstValue [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue  child 0] 
+        set lastValue  [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue  child end] 
        
        # puts "Values: $firstValue  , $lastValue <- $targetFinalValue"
         puts "----> Value: [$newValue getValue] ($firstValue // $lastValue)"
@@ -758,7 +758,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         ## Cases for expression: 
         ##  - An AST Operator: Calculate value and assign 
         ##  - A FlexNode, look for value
-        if {[::odfi::common::isClass $expression ::odfi::dev::hw::h2dl::ast::ASTOperator] || [::odfi::common::isClass $expression ::odfi::dev::hw::h2dl::ast::ASTConstant]} {
+        if {[::odfi::common::isClass $expression ::odfi::h2dl::ast::ASTOperator] || [::odfi::common::isClass $expression ::odfi::h2dl::ast::ASTConstant]} {
 
 
             #puts "nb Updating value for Nont blocking assignment to $targetAssignee, with main operator [$expression info class]"
@@ -768,10 +768,10 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             #puts "nb new value: $newValue"
 
             ## If new value is empty, or not a SimulationValue, assume the operator already updated the value 
-            if {$newValue!="" || [::odfi::common::isClass $newValue ::odfi::dev::hw::h2dl::sim1::SimulationValue]} {
+            if {$newValue!="" || [::odfi::common::isClass $newValue ::odfi::h2dl::sim1::SimulationValue]} {
 
                 ## Current value: add or  update 
-                set currentValue [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+                set currentValue [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue child 0]
                 if {$currentValue!=""} {
                     #$currentValue detach
                     #$currentValue delete object
@@ -793,13 +793,13 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
             ## Debug: 
             ## Current value 
-            #set currentValue [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+            #set currentValue [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue child 0]
             #puts "Current value of node  [$targetAssignee name get] [$currentValue getValue]"
 
         } elseif {[::odfi::common::isClass $expression ::odfi::flextree::FlexNode]} {
 
             ## Look for value 
-            set newValue [$expression shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+            set newValue [$expression shade ::odfi::h2dl::sim1::SimulationValue child 0]
             if {$newValue==""} {
                 
                 error "AST Non Blocking update, cannot fetch value from flexnode $expression , maybe not initialised"
@@ -807,11 +807,11 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             } else {
 
                 ## Update left side value or add one
-                set currentValue [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child end]
+                set currentValue [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue child end]
                 if {$currentValue!=""} {
                     #$currentValue setValue [$expressionValue getValue]
                 } else {
-                    #set newValue [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value [$expressionValue getValue]]
+                    #set newValue [::odfi::h2dl::sim1::SimulationValue new -value [$expressionValue getValue]]
                     #$targetAssignee addChild $newValue
                 }
 
@@ -858,15 +858,15 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         ## Non Blocking: Always add value as an extra node 
         ## There might already be an extra node 
-        set firstValue [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue  child 0] 
-        set lastValue  [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue  child end] 
+        set firstValue [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue  child 0] 
+        set lastValue  [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue  child end] 
        
        # puts "Values: $firstValue  , $lastValue <- $targetFinalValue"
        
         if {$firstValue != $lastValue} {
             $lastValue setValue $targetFinalValue
         } else {
-            set newValueToAdd [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value $targetFinalValue ]
+            set newValueToAdd [::odfi::h2dl::sim1::SimulationValue new -value $targetFinalValue ]
             $targetAssignee addChild $newValueToAdd
         }
         
@@ -884,12 +884,12 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
     }
 
     ## Non blocking assignments must be updated at the end of a node's processing
-    ::odfi::dev::hw::h2dl::Posedge public method sim:interact args {
+    ::odfi::h2dl::Posedge public method sim:interact args {
 
         #puts "In posedge interact, schedule an action"
-         ${odfi::dev::hw::h2dl::sim1::currentSimulator} scheduleClosureNow "
+         ${odfi::h2dl::sim1::currentSimulator} scheduleClosureNow "
             ## Go through all non blocking assign nodes, and merge values
-            [current object] shade ::odfi::dev::hw::h2dl::ast::ASTNonBlockingAssign walkDepthFirstPreorder {
+            [current object] shade ::odfi::h2dl::ast::ASTNonBlockingAssign walkDepthFirstPreorder {
 
                 abn =>
 
@@ -902,12 +902,12 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
          "   
 
         return 
-        ${odfi::dev::hw::h2dl::sim1::currentSimulator} scheduleClosureNow [list node [current object]] {
+        ${odfi::h2dl::sim1::currentSimulator} scheduleClosureNow [list node [current object]] {
 
             #puts "--> Inside posedge action: $node [[$node children] size] ******************************************************************************"
 
             ## Go through all non blocking assign nodes, and merge values
-            $node shade ::odfi::dev::hw::h2dl::ast::ASTNonBlockingAssign walkDepthFirstPreorder {
+            $node shade ::odfi::h2dl::ast::ASTNonBlockingAssign walkDepthFirstPreorder {
            
                 
                
@@ -920,7 +920,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
                     ## This method merges all the values on the left side to the first available value 
                     #set left [$node noShade child 0]
-                    set values   [$left shade ::odfi::dev::hw::h2dl::sim1::SimulationValue children]
+                    set values   [$left shade ::odfi::h2dl::sim1::SimulationValue children]
                     if {[$values size] >1 } {
                         set firstVal [$values at 0]
                         ::repeat [expr [$values size]-1] {
@@ -944,7 +944,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
     ## Update Blocking Assignment 
     #######################
 
-    valueUpdaterBuilder ::odfi::dev::hw::h2dl::ast::ASTBlockingAssign {
+    valueUpdaterBuilder ::odfi::h2dl::ast::ASTBlockingAssign {
 
 
 
@@ -1019,7 +1019,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         ## Cases for expression: 
         ##  - An AST Operator: Calculate value and assign 
         ##  - A FlexNode, look for value
-        if {[::odfi::common::isClass $expression ::odfi::dev::hw::h2dl::ast::ASTOperator] || [::odfi::common::isClass $expression ::odfi::dev::hw::h2dl::ast::ASTConstant]} {
+        if {[::odfi::common::isClass $expression ::odfi::h2dl::ast::ASTOperator] || [::odfi::common::isClass $expression ::odfi::h2dl::ast::ASTConstant]} {
 
 
             #puts "nb Updating value for Nont blocking assignment to $targetAssignee, with main operator [$expression info class]"
@@ -1029,10 +1029,10 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             #puts "nb new value: $newValue"
 
             ## If new value is empty, or not a SimulationValue, assume the operator already updated the value 
-            if {$newValue!="" || [::odfi::common::isClass $newValue ::odfi::dev::hw::h2dl::sim1::SimulationValue]} {
+            if {$newValue!="" || [::odfi::common::isClass $newValue ::odfi::h2dl::sim1::SimulationValue]} {
 
                 ## Current value: add or  update 
-                set currentValue [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+                set currentValue [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue child 0]
                 if {$currentValue!=""} {
                     #$currentValue detach
                     #$currentValue delete object
@@ -1055,13 +1055,13 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
             ## Debug: 
             ## Current value 
-            #set currentValue [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+            #set currentValue [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue child 0]
             #puts "Current value of node  [$targetAssignee name get] [$currentValue getValue]"
 
         } elseif {[::odfi::common::isClass $expression ::odfi::flextree::FlexNode]} {
 
             ## Look for value 
-            set newValue [$expression shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+            set newValue [$expression shade ::odfi::h2dl::sim1::SimulationValue child 0]
             if {$newValue==""} {
                 
                 odfi::log::warning "AST Blocking update, cannot fetch value from flexnode $expression , maybe not initialised"
@@ -1069,11 +1069,11 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             } else {
 
                 ## Update left side value or add one
-                set currentValue [$targetAssignee shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child end]
+                set currentValue [$targetAssignee shade ::odfi::h2dl::sim1::SimulationValue child end]
                 if {$currentValue!=""} {
                     #$currentValue setValue [$expressionValue getValue]
                 } else {
-                    #set newValue [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value [$expressionValue getValue]]
+                    #set newValue [::odfi::h2dl::sim1::SimulationValue new -value [$expressionValue getValue]]
                     #$targetAssignee addChild $newValue
                 }
 
@@ -1094,13 +1094,13 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
     ## Constant
     ###################################
-    valueUpdaterBuilder ::odfi::dev::hw::h2dl::ast::ASTConstant {
+    valueUpdaterBuilder ::odfi::h2dl::ast::ASTConstant {
 
-        set valueNode [:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+        set valueNode [:shade ::odfi::h2dl::sim1::SimulationValue child 0]
         if {$valueNode!=""} {
             return $valueNode
         } else {
-            set valueNode [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value ${:constant}]
+            set valueNode [::odfi::h2dl::sim1::SimulationValue new -value ${:constant}]
             :addChild $valueNode
             return $valueNode
         }
@@ -1110,7 +1110,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
     ## Mathematical update
     ###################################
-    valueUpdaterBuilder ::odfi::dev::hw::h2dl::ast::ASTNegate {
+    valueUpdaterBuilder ::odfi::h2dl::ast::ASTNegate {
 
         
 
@@ -1118,7 +1118,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         ## Get Value 
         #################
-        set value [$valueSource shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+        set value [$valueSource shade ::odfi::h2dl::sim1::SimulationValue child 0]
         if {$value==""} {
             odfi::log::error "Cannot Negate non existent value of node $valueSource ([$valueSource info class]). Make sure an initial value was set before starting"
         }
@@ -1133,7 +1133,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         #puts "Negated from [$value getValue] to $negated ([format %b $negated]) "
 
         ## Return new Value 
-        set newValue [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value $negated]
+        set newValue [::odfi::h2dl::sim1::SimulationValue new -value $negated]
 
         return $newValue
 
@@ -1154,7 +1154,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
     }
 
 
-     valueUpdaterBuilder ::odfi::dev::hw::h2dl::ast::ASTAdd {
+     valueUpdaterBuilder ::odfi::h2dl::ast::ASTAdd {
 
         #puts "In ADD Update "
 
@@ -1165,8 +1165,8 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         catch {$right sim:updateValue}
 
         ## Value Objects
-        set valLeft  [$left shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
-        set valRight [$right shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+        set valLeft  [$left shade ::odfi::h2dl::sim1::SimulationValue child 0]
+        set valRight [$right shade ::odfi::h2dl::sim1::SimulationValue child 0]
 
         ## Get real values or 0 if no available
         set vl [expr {$valLeft == ""} ? 0 : [$valLeft getValue]]
@@ -1176,11 +1176,11 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         puts "-- in add $valLeft $valRight"
         set resVal [expr $vl + $vr]
 
-        return [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value $resVal]
+        return [::odfi::h2dl::sim1::SimulationValue new -value $resVal]
 
      }
 
-     valueUpdaterBuilder ::odfi::dev::hw::h2dl::ast::ASTAnd {
+     valueUpdaterBuilder ::odfi::h2dl::ast::ASTAnd {
 
         #
 
@@ -1191,16 +1191,16 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         #puts "In ADD Update $left ([$left info class]), $right ([$right info class])"
 
         ## Left and Right could be operators
-        if {[odfi::common::isClass $left ::odfi::dev::hw::h2dl::ast::ASTOperator]} {
+        if {[odfi::common::isClass $left ::odfi::h2dl::ast::ASTOperator]} {
             set valLeft [$left sim:updateValue]
         } else {
-            set valLeft  [$left shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+            set valLeft  [$left shade ::odfi::h2dl::sim1::SimulationValue child 0]
         }
-        if {[odfi::common::isClass $right ::odfi::dev::hw::h2dl::ast::ASTOperator]} {
+        if {[odfi::common::isClass $right ::odfi::h2dl::ast::ASTOperator]} {
             set valRight [$right sim:updateValue]
         } else {
-            #puts "------ fetchign val right from simulation value node: [$right shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0] "
-            set valRight  [$right shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+            #puts "------ fetchign val right from simulation value node: [$right shade ::odfi::h2dl::sim1::SimulationValue child 0] "
+            set valRight  [$right shade ::odfi::h2dl::sim1::SimulationValue child 0]
         }
 
         #catch {$left sim:updateValue}
@@ -1209,8 +1209,8 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         ## Value left 
         #puts "--> Values ($valLeft) <-> ($valRight)"
 
-        #set valLeft  [$left shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
-        #set valRight [$right shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+        #set valLeft  [$left shade ::odfi::h2dl::sim1::SimulationValue child 0]
+        #set valRight [$right shade ::odfi::h2dl::sim1::SimulationValue child 0]
 
         if {$valLeft == "" || $valRight == ""} {
             return ""
@@ -1218,11 +1218,11 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         set resVal [expr [$valLeft getValue] & [$valRight getValue]]
 
-        return [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value $resVal]
+        return [::odfi::h2dl::sim1::SimulationValue new -value $resVal]
 
      }
 
-     valueUpdaterBuilder ::odfi::dev::hw::h2dl::ast::ASTBitOr {
+     valueUpdaterBuilder ::odfi::h2dl::ast::ASTBitOr {
 
         #puts "In ADD Update "
 
@@ -1234,8 +1234,8 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         ## Value left 
 
-        set valLeft  [$left shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
-        set valRight [$right shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+        set valLeft  [$left shade ::odfi::h2dl::sim1::SimulationValue child 0]
+        set valRight [$right shade ::odfi::h2dl::sim1::SimulationValue child 0]
 
         if {$valLeft == "" || $valRight == ""} {
             return ""
@@ -1243,12 +1243,12 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         set resVal [expr [$valLeft getValue] | [$valRight getValue]]
 
-        return [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value $resVal]
+        return [::odfi::h2dl::sim1::SimulationValue new -value $resVal]
 
      }
 
 
-     valueUpdaterBuilder ::odfi::dev::hw::h2dl::ast::ASTCompare {
+     valueUpdaterBuilder ::odfi::h2dl::ast::ASTCompare {
 
         ## Left and right values 
         set left [:child 0]
@@ -1258,8 +1258,8 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         ## Value left 
 
-        set valLeft  [$left shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
-        set valRight [$right shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
+        set valLeft  [$left shade ::odfi::h2dl::sim1::SimulationValue child 0]
+        set valRight [$right shade ::odfi::h2dl::sim1::SimulationValue child 0]
 
         if {$valLeft == "" || $valRight == ""} {
             return 0
@@ -1267,24 +1267,24 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
         set resVal [expr [$valLeft getValue] == [$valRight getValue]]
 
-        return [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value $resVal]
+        return [::odfi::h2dl::sim1::SimulationValue new -value $resVal]
 
      }
 
 
      ## Value Object Utilities 
      ################################
-     set targetClasses {::odfi::dev::hw::h2dl::Register ::odfi::dev::hw::h2dl::Bit ::odfi::dev::hw::h2dl::IO}
+     set targetClasses {::odfi::h2dl::Register ::odfi::h2dl::Bit ::odfi::h2dl::IO}
      foreach targetClass $targetClasses {
 
 
         ## Adds a value node to the target. Calls set sim value if none present
         $targetClass public method sim:addValue  {value } {
 
-            if {[[:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue children] size]==0} {
+            if {[[:shade ::odfi::h2dl::sim1::SimulationValue children] size]==0} {
                 return [:sim:setValue $value ]
             } else {
-                set valueNodes [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value $value]
+                set valueNodes [::odfi::h2dl::sim1::SimulationValue new -value $value]
                 :addChild $valueNodes
 
                 return $valueNodes
@@ -1307,14 +1307,14 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
             #puts "in parent set Value"
             ## Take all value nodes, or just the last one 
-            set valueNodes [:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue children]
+            set valueNodes [:shade ::odfi::h2dl::sim1::SimulationValue children]
 
 
             ## If no value, create one 
             ## Otherwise update, all or just the last one 
             if {[$valueNodes size]==0} {
 
-                set valueNodes [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value $value]
+                set valueNodes [::odfi::h2dl::sim1::SimulationValue new -value $value]
                 :addChild $valueNodes
 
                 return $valueNodes
@@ -1350,7 +1350,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
 
          $targetClass public method sim:unForceValues args {
-            set valueNodes [:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue children]
+            set valueNodes [:shade ::odfi::h2dl::sim1::SimulationValue children]
             $valueNodes foreach {
                 #puts "node: [$it info lookup methods]"
                 $it unForceValue
@@ -1361,8 +1361,8 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         $targetClass public method sim:mergeValues args {
 
             
-            set firstValue [:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue  child 0] 
-            set lastValue  [:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue  child end] 
+            set firstValue [:shade ::odfi::h2dl::sim1::SimulationValue  child 0] 
+            set lastValue  [:shade ::odfi::h2dl::sim1::SimulationValue  child end] 
 
             #puts "merging values of [:info class] $firstValue $lastValue "
 
@@ -1373,7 +1373,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
                 :sim:setValue [$lastValue getValue] -now true -force true
 
                 
-                [:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue children] foreachFrom 1 {
+                [:shade ::odfi::h2dl::sim1::SimulationValue children] foreachFrom 1 {
                     $it detach 
                     $it destroy
                 }
@@ -1385,7 +1385,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
          ## If no Value available, returns an empty string
          $targetClass public method sim:getValue args {
 
-            set valueNodes [:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue children]
+            set valueNodes [:shade ::odfi::h2dl::sim1::SimulationValue children]
             if {[$valueNodes size] > 0} {
                 return [$valueNodes at 0]
             } else {
@@ -1398,8 +1398,8 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
          ## If only one value available, create a new one
          $targetClass public method sim:getUpdateValue args {
 
-            set firstValue [:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue  child 0] 
-            set lastValue  [:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue  child end] 
+            set firstValue [:shade ::odfi::h2dl::sim1::SimulationValue  child 0] 
+            set lastValue  [:shade ::odfi::h2dl::sim1::SimulationValue  child end] 
             if {$firstValue!=$lastValue} {
                 return $lastValue
             } elseif {$firstValue=="" && $lastValue==""} {
@@ -1427,9 +1427,9 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
                 ##  - If not , do nothing
 
                 set child [:child end]
-                if {[::odfi::common::isClass $child ::odfi::dev::hw::h2dl::sim1::SimulationValue]} {
+                if {[::odfi::common::isClass $child ::odfi::h2dl::sim1::SimulationValue]} {
 
-                    set lastValueChild [:shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child end]
+                    set lastValueChild [:shade ::odfi::h2dl::sim1::SimulationValue child end]
 
                     ## Go listen on value otherwise ignore
                     if {$child == $lastValueChild} {
@@ -1476,14 +1476,14 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
      ## Reset Stuff 
      #########################
-     #::odfi::dev::hw::h2dl::Reset public method sim:interact args {
+     #::odfi::h2dl::Reset public method sim:interact args {
 #
      #   next
      #}
 
      
 
-     ::odfi::dev::hw::h2dl::Reset +builder {
+     ::odfi::h2dl::Reset +builder {
 
         puts "(SIM1) Building Reset Handler son $expr [$expr info class] -> ${:currentShading} -> [[$expr children] size]"
 
@@ -1501,14 +1501,14 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             
         #    puts "(SIM1) Value on [$signal name get] was updated, checking "
 
-         #   set reset  [$signal shade ::odfi::dev::hw::h2dl::Reset child 0]
+         #   set reset  [$signal shade ::odfi::h2dl::Reset child 0]
          #   if {[$reset +sim_active get]} {
          #       set updateNow [$reset isAsync ? true : false]
                # $signal sim:setValue 0 -now $updateNow
          #   }
         #}
 
-        ${:expr} shade ::odfi::dev::hw::h2dl::Register walkDepthFirst {
+        ${:expr} shade ::odfi::h2dl::Register walkDepthFirst {
 
             set reg $node 
 
@@ -1551,7 +1551,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         }
 
      }
-     #::odfi::dev::hw::h2dl::Reset public method +build args {
+     #::odfi::h2dl::Reset public method +build args {
      #   next 
      #   puts "(SIM1) Building Reset Handlers"
      #}
@@ -1560,7 +1560,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
      ## Branching Nodes 
      ###############################
 
-     valueUpdaterBuilder ::odfi::dev::hw::h2dl::ast::ASTIf {
+     valueUpdaterBuilder ::odfi::h2dl::ast::ASTIf {
 
         #puts "Update if with expression [:info class]"
 
@@ -1574,7 +1574,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             error "ASTIF Simulation Update, the target expression ($expression // [$expression info class]) triggers no value, maybe not initialised or so"
         }
 
-        #if {[$expression isClass odfi::dev::hw::h2dl::ValueHolder]} {
+        #if {[$expression isClass odfi::h2dl::ValueHolder]} {
         #    set expressionValue [$expression sim:getValue]
         #} else {
         #    set expressionValue [$expression sim:updateValue]
@@ -1589,7 +1589,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
             ##################
             set body [:child 1]
             set expressionValue [$body sim:updateValue]
-            return [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value [$expressionValue getValue]] 
+            return [::odfi::h2dl::sim1::SimulationValue new -value [$expressionValue getValue]] 
 
         } else {
 
@@ -1605,7 +1605,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
             #puts "Else processing: [$elseExpression info class] -> [$expressionValue getValue] "
 
-            return [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value [$expressionValue getValue]] 
+            return [::odfi::h2dl::sim1::SimulationValue new -value [$expressionValue getValue]] 
 
         }
 
@@ -1619,18 +1619,18 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
      ## Value Holding : Bit support 
      #############################
-     valueUpdaterBuilder ::odfi::dev::hw::h2dl::ValueHolder {
+     valueUpdaterBuilder ::odfi::h2dl::ValueHolder {
 
         return [:sim:getValue]
 
      }
-     valueUpdaterBuilder ::odfi::dev::hw::h2dl::Input {
+     valueUpdaterBuilder ::odfi::h2dl::Input {
 
         return [:sim:getValue]
 
      }
 
-     ::odfi::dev::hw::h2dl::Bit public method sim:getValue args {
+     ::odfi::h2dl::Bit public method sim:getValue args {
 
 
         ## Value Must be present in parents  which is the main value holder 
@@ -1645,7 +1645,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         set bitValue [expr ([$parentValue getValue] >> ${:index}) & 0x1]
 
         ## Return 
-        return [::odfi::dev::hw::h2dl::sim1::SimulationValue new -value $bitValue]
+        return [::odfi::h2dl::sim1::SimulationValue new -value $bitValue]
 
         ## Set value 
         #:sim:setValue $bitValue
@@ -1653,7 +1653,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
      }
 
-     ::odfi::dev::hw::h2dl::Bit public method sim:setUpdateValue {value {-now false} {-forced false} } {
+     ::odfi::h2dl::Bit public method sim:setUpdateValue {value {-now false} {-forced false} } {
 
         #puts "Setting value $value on Bit"
         #return next
@@ -1712,7 +1712,7 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         #:sim:setValue [expr  [$parentValue getValue] | ([$parentValue getValue] & ( $newvalue << ${fromIndex} ) | ($newvalue << ${fromIndex}) ) ]
 
      }
-     #::odfi::dev::hw::h2dl::Bit public method sim:setValue {value {-now false} {-forced false} } {
+     #::odfi::h2dl::Bit public method sim:setValue {value {-now false} {-forced false} } {
 
         ## Record Value normaly 
       #  set valueNode [next]
@@ -1732,15 +1732,15 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
 
      ## Connection Support 
      ################
-     #puts "A Conn builders: [odfi::dev::hw::h2dl::Connection +builders get] "
-     odfi::dev::hw::h2dl::Connection +builder {
+     #puts "A Conn builders: [odfi::h2dl::Connection +builders get] "
+     odfi::h2dl::Connection +builder {
 
         set parent [:parent]
         #puts "Buld Connection from [$parent name get] to [[:child 0] name get]"
 
         ## Listen on destination if we are an input 
         ## Outputs are meant to be written, not updated 
-        if {[$parent isClass odfi::dev::hw::h2dl::Input]} {
+        if {[$parent isClass odfi::h2dl::Input]} {
             set signal [[:child 0]]
             $signal sim:onValueUpdate "
                 puts \"Updated IO\"
@@ -1751,6 +1751,6 @@ namespace eval  odfi::dev::hw::h2dl::sim1 {
         #puts "in sim builder"
      }
 
-    # puts "Conn builders: [odfi::dev::hw::h2dl::Connection +builders get] "
+    # puts "Conn builders: [odfi::h2dl::Connection +builders get] "
 
 }

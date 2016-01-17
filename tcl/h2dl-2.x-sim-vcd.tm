@@ -1,7 +1,7 @@
-package provide odfi::dev::hw::h2dl::sim::vcd 2.0.0
-package require  odfi::dev::hw::h2dl 2.0.0
+package provide odfi::h2dl::sim::vcd 2.0.0
+package require  odfi::h2dl:: 2.0.0
 
-namespace eval  odfi::dev::hw::h2dl::sim::vcd {
+namespace eval  odfi::h2dl::sim::vcd {
 
 
     ##############################
@@ -40,7 +40,7 @@ namespace eval  odfi::dev::hw::h2dl::sim::vcd {
             
 
             ## Create target scope for signal 
-            set hierarchyParents [$signal shade ::odfi::dev::hw::h2dl::Module getPrimaryParents]
+            set hierarchyParents [$signal shade ::odfi::h2dl::Module getPrimaryParents]
 
             odfi::log::info "Register signal to dump [$signal name get], [$signal getPrimaryTreeDepth] , [$hierarchyParents size]"
 
@@ -48,17 +48,17 @@ namespace eval  odfi::dev::hw::h2dl::sim::vcd {
             ## Check if Signal is part of a master
             ## If it is, its value should be saved for the instances
             #########
-            if {[[$signal parent] isClass odfi::dev::hw::h2dl::Master]} {
+            if {[[$signal parent] isClass odfi::h2dl::Master]} {
 
                 odfi::log::info "Signal is part of a master, precreate some values for this instances then"
                 set master [$signal parent]
 
-                [$master shade odfi::dev::hw::h2dl::Instance children] foreach {
+                [$master shade odfi::h2dl::Instance children] foreach {
 
                     
 
                     ## Create Scope
-                    #set hierarchyParents [$it shade ::odfi::dev::hw::h2dl::Module getPrimaryParents]
+                    #set hierarchyParents [$it shade ::odfi::h2dl::Module getPrimaryParents]
                     #set scopeString      [$hierarchyParents > map { return [$it name get] } mkString "."]
 
                     
@@ -73,7 +73,7 @@ namespace eval  odfi::dev::hw::h2dl::sim::vcd {
 
 
             } else {
-                #set hierarchyParents [$signal shade ::odfi::dev::hw::h2dl::Module getPrimaryParents]
+                #set hierarchyParents [$signal shade ::odfi::h2dl::Module getPrimaryParents]
                 #set scopeString [$hierarchyParents > map { return [$it name get] } mkString "."]
                 
                 set instance   [$signal findFirstInstanceInHierarchy]
@@ -91,7 +91,7 @@ namespace eval  odfi::dev::hw::h2dl::sim::vcd {
         :public method getOrCreateScope instance {
 
             ## Create Scope
-            set hierarchyParents [$instance shade ::odfi::dev::hw::h2dl::Module getPrimaryParents]
+            set hierarchyParents [$instance shade ::odfi::h2dl::Module getPrimaryParents]
             set scopeString      [$hierarchyParents > map { return [$it name get] } += "[$instance name get]" mkString "."]
 
             odfi::log::info "--> Create Scope for Instance $instance , scope: $scopeString"
@@ -114,9 +114,9 @@ namespace eval  odfi::dev::hw::h2dl::sim::vcd {
         ## Returns: {typeName shortType}
         :public method getTypeInfo signal {
 
-            if {[odfi::common::isClass $signal odfi::dev::hw::h2dl::Register]} {
+            if {[odfi::common::isClass $signal odfi::h2dl::Register]} {
                 return [list "reg" "b"]
-            }  elseif {[odfi::common::isClass $signal odfi::dev::hw::h2dl::Analog]} {
+            }  elseif {[odfi::common::isClass $signal odfi::h2dl::Analog]} {
                 return [list "real" "r"]
             } else {
                 return [list "wire" "b"]
@@ -164,8 +164,8 @@ namespace eval  odfi::dev::hw::h2dl::sim::vcd {
                     
                     ## Value 
                     set val x 
-                    #set currentValue [$signal shade ::odfi::dev::hw::h2dl::sim1::SimulationValue child 0]
-                    set currentValue [$signal shade odfi::dev::hw::h2dl::sim::vcd::VCDDumpValue child 0]
+                    #set currentValue [$signal shade ::odfi::h2dl::sim1::SimulationValue child 0]
+                    set currentValue [$signal shade odfi::h2dl::sim::vcd::VCDDumpValue child 0]
 
                     set valString [:getValueString $signal $id $currentValue]
                     
@@ -331,7 +331,7 @@ namespace eval  odfi::dev::hw::h2dl::sim::vcd {
             ## Check if Signal is part of a master
             ## If it is, its value should be saved for the instances
             #########
-            if {[[$signal parent] isClass odfi::dev::hw::h2dl::Master]} {
+            if {[[$signal parent] isClass odfi::h2dl::Master]} {
 
             }
 
@@ -362,7 +362,7 @@ namespace eval  odfi::dev::hw::h2dl::sim::vcd {
 
                 # puts "Value updated on: $signal [:info class] -> [:getValue]"
 
-                set scopeOption [[$signal getParentsRaw] findOption { odfi::common::isClass $it ::odfi::dev::hw::h2dl::sim::vcd::VCDScope} ]
+                set scopeOption [[$signal getParentsRaw] findOption { odfi::common::isClass $it ::odfi::h2dl::sim::vcd::VCDScope} ]
                 $scopeOption match {
                     :none {
                         puts "No scrope found"

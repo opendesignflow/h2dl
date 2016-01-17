@@ -1,14 +1,14 @@
-package provide odfi::dev::hw::h2dl::view 2.0.0
-package require odfi::dev::hw::h2dl 2.0.0
+package provide odfi::h2dl::view 2.0.0
+package require odfi::h2dl:: 2.0.0
 
 
-namespace eval odfi::dev::hw::h2dl::view {
+namespace eval odfi::h2dl::view {
 
 
     odfi::language::Language define VIEW {
 
         :view name type closure {
-            +exportTo odfi::dev::hw::h2dl::Module
+            +exportTo odfi::h2dl::Module
 
 
             +method elaborate args {
