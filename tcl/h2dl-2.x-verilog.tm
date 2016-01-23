@@ -49,12 +49,17 @@ namespace eval odfi::h2dl::verilog {
     ######################
     defineReduce ::odfi::h2dl::Module {
 
+        
+
         if {[:isClass ::odfi::h2dl::Instance]} {
 
             
             ## Get Master 
             set master [:master get]
 
+            ## Create Type Name from Hierarchy. If black box, don't modify 
+            #set typeName [:shade odfi::h2dl::Module formatHierarchyString {$it name get} "_"]_[$master name get]
+            set typeName [$master name get]
 
             puts "Writing Out Module Instance, with master: $master"
 
@@ -64,7 +69,7 @@ namespace eval odfi::h2dl::verilog {
 
             ## Name 
             ##############
-            $out <<< "[$master name get] [:name get]"
+            $out <<< "$typeName [:name get]"
 
             ### IOS
             #############
@@ -89,18 +94,22 @@ namespace eval odfi::h2dl::verilog {
 
             #return "INSTANCE [:name get]"
 
-        } elseif {[:isClass ::odfi::h2dl::Master]} {
+        } elseif {[:isClass ::odfi::h2dl::Master] && ![:hasAttribute ::odfi::h2dl blackbox]} {
 
             puts "Writing Out Module [:name get]"
             puts "Results Content: [$results size]"
+            
+            ## Type name from hierarchy if enabled
+            #set typeName [join [list [:shade odfi::h2dl::Module formatHierarchyString {$it name get} "_"] [:name get]] _]
+            set typeName [:name get]
 
             ## Prepare Stream To write out 
             #####################################
             set out [::new odfi::richstream::RichStream #auto]
 
-            ## Write Definition 
+            ## Write Definition [:getModelInstanceName] 
             ############################
-            $out <<< "module [:getModelInstanceName] "
+            $out <<< "module $typeName "
 
             ### IOS
             set ioString [$results @> filterRemove {[lindex $it 0] isClass odfi::h2dl::IO} @> map {
@@ -236,7 +245,27 @@ namespace eval odfi::h2dl::verilog {
         if {[$parent isClass ::odfi::h2dl::ast::ASTNode]} {
             return "[:name get]"
         } elseif {[$parent isClass ::odfi::h2dl::Instance]} {
-            return ".[:name get]()" 
+
+            ## Connection 
+            set connectionString  ".[:name get]()"
+
+            ## Child Connection 
+            set cconnection [:shade odfi::h2dl::Connection child 0]
+            if {$cconnection!=""} {
+                set connectionString  ".[:name get]([[$cconnection firstChild] name get])"
+            } else {
+                 ## Parent Connection ?
+                set pconnection [:shade odfi::h2dl::Connection parent]
+                if {$pconnection!=""} {
+                    set connectionString  ".[:name get]([[$pconnection parent] name get])"
+                }
+            }
+
+           
+
+            #puts "Foudn Connections on IO instance: $pconnection  $cconnection "
+
+            return $connectionString 
         } else {
 
             ## Description
@@ -351,6 +380,15 @@ namespace eval odfi::h2dl::verilog {
         set right [expr {[$results size]>1} ? {[lindex [$results at 1] 1]} : "{}"]
 
         return "$left == $right"
+    }
+
+     defineReduce ::odfi::h2dl::ast::ASTNegate {
+        #puts "CONSTANT OUT"
+
+        set left [lindex [$results at 0] 1]
+        #set right [expr {[$results size]>1} ? {[lindex [$results at 1] 1]} : "{}"]
+
+        return "~ $left"
     }
 
     defineReduce ::odfi::h2dl::ast::ASTConstant {
@@ -549,9 +587,8 @@ namespace eval odfi::h2dl::verilog {
 
             ## Check output folder 
             ##############
-            if {![file exists $outputFolder]} {
-                file mkdir $outputFolder
-            }
+            file mkdir $outputFolder
+           
             
 
             ## Start Producing
@@ -561,6 +598,7 @@ namespace eval odfi::h2dl::verilog {
             ## List of created files 
             set filesList {}
 
+
             ## Prepare 
             ###################
 
@@ -569,11 +607,24 @@ namespace eval odfi::h2dl::verilog {
 
                 set module [current object]
 
+                ## Prepare F File 
+                ###############
+                set fFileStream [::new odfi::richstream::RichStream #auto]
+
+                $fFileStream streamToFile $outputFolder/[$module name get].f
+
                 ## Find All the NamedValue for local params, and put them in the top module 
-                :shade odfi::h2dl::NamedValue walkDepthFirstPreorder {
+                :walkDepthFirstPreorder {
                     {namedValue parent} => 
-                        $namedValue detachFrom $parent 
-                        $namedValue setFirstParent $module 
+
+                        if {[$namedValue isClass odfi::h2dl::NamedValue]} {
+                            $namedValue detachFrom $parent 
+                            $namedValue setFirstParent $module 
+                            return false 
+                        } elseif {[$namedValue isClass odfi::h2dl::Module]} {
+                            return false
+                        }
+                        
                 
                     return true
                 }
@@ -601,10 +652,14 @@ namespace eval odfi::h2dl::verilog {
                 ::set __r [$node verilog:reduce $parent $results]
 
                 ## Write to file if Module Master, and remove from results to avoid duplications
-                if {[$node isClass odfi::h2dl::Module] && ![$node isClass odfi::h2dl::Instance]} {
+                if {[$node isClass odfi::h2dl::Module] && ![$node isClass odfi::h2dl::Instance] && ![$node hasAttribute ::odfi::h2dl blackbox]} {
                     puts "Module -> To File ${outputFolder}/[$node name get].v" 
                     puts "Module Res: $__r"
                     odfi::files::writeToFile ${outputFolder}/[$node name get].v $__r 
+
+                    ## Add to f
+                    $fFileStream << [file normalize ${outputFolder}/[$node name get].v]
+
                     ::set __r ""
                 }
                 return $__r
@@ -614,6 +669,7 @@ namespace eval odfi::h2dl::verilog {
 
             ## Write F File out 
             ##########################
+            $fFileStream close
             #odfi::files::writeToFile ${outputFolder}/netlist.f [join $filesList \n]
 
 

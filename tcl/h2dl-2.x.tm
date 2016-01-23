@@ -19,6 +19,7 @@ package require odfi::language 1.0.0
 package require odfi::nx::domainmixin
 #package require odfi::h2dl::verilog 2.0.0
 package require odfi::h2dl::ast  2.0.0
+package require odfi::attributes 2.0.0
 
 namespace eval odfi::h2dl {
     
@@ -78,6 +79,7 @@ namespace eval odfi::h2dl {
 
             +var file ""
             +var line ""
+            +mixin ::odfi::attributes::AttributesContainer
 
             +method init args {
                 next 
@@ -306,11 +308,13 @@ namespace eval odfi::h2dl {
 
             ## Bit Mapping
             :bitMap index name {
+                +var wire ""
                 +builder {
                     set mappedWire [[[:parent] parent] wire [[:parent] name get]_[:name get]] 
                     uplevel 4 "set [$mappedWire name get] $mappedWire"
                     #puts "Mapped wire is in [[$mappedWire parent] name get]"
-                    $mappedWire assign "[:parent] <- ${:index}"           
+                    $mappedWire assign "[:parent] <- ${:index}"      
+                    set :wire $mappedWire     
                 }
             }
 
@@ -321,6 +325,11 @@ namespace eval odfi::h2dl {
                      :addChild ${:expression}
 
                  }
+            }
+
+            ## Io Transform 
+            +method toOutput args {
+                :object mixins add ::odfi::h2dl::Output
             }
         }
 
@@ -437,22 +446,33 @@ namespace eval odfi::h2dl {
             ##############
             
             ## For now, just push up to parent
-            +method pushUp { {cl ""} } {
+            +method pushUp {{prefix ""} {cl ""} } {
 
                 set sourceParent [:parent]
                 set source [current object]
-                set targetParent [$sourceParent parent]
+                set targetParent [$sourceParent shade ::odfi::h2dl::Module parent]
 
                 puts "push to target parent: $targetParent, source parent: $sourceParent"
                 set resultSignal ""
                 if {$targetParent!=""} {
 
-                    $targetParent apply {
-                        set resultSignal [:input [$sourceParent name get]_[$source name get] $cl]
+
+                    ## Copy IO 
+                    set resultSignal [[current object] copy]
+
+                    ## Rename 
+                    if {$prefix!=""} {
+                        $resultSignal name set ${prefix}_[$resultSignal name get]
                     }
+                    ## Add to parent 
+                    $targetParent addChild $resultSignal
+
+                    #$targetParent apply {
+                    #    set resultSignal [:input [$sourceParent name get]_[$source name get] $cl]
+                    #}
 
                     ## Make connection 
-                    $source connection $resultSignal
+                    $resultSignal connection $source 
 
                 }
             }
@@ -512,30 +532,37 @@ namespace eval odfi::h2dl {
             #######################
 
             ## When a parent is added, if it is another module, then create an instance instead
+            ## Same After building if we are in a hierarchy
             +builder {
 
-                :onParentAdded {
+                set postBuildCl {
                     set p [:noShade parent end]
-                    puts "*** Module added a parent [$p info class]"
+                    
                     ## Only if added to a Module, and we are not a module ourselves already
-                    if {[$p isClass odfi::h2dl::Module] && ![:isClass odfi::h2dl::Instance]} {
+                    if {$p!=""} {
+                        puts "*** Module added a parent [$p info class]"
+                        if {[$p isClass odfi::h2dl::Module] && ![:isClass odfi::h2dl::Instance]} {
 
-                        set instance [:createInstance [:name get]_I]
-                        [current object] detach
-                        #$p removeChild [current object]
-                        $p addChild $instance
+                            set instance [:createInstance [:name get]_I]
+                            #[current object] detach
+                            #$p removeChild [current object]
+                            $p addChild $instance
+                        }
                     }
                 }
+                :onParentAdded $postBuildCl
+                :onBuildDone $postBuildCl
             }
 
             +method doCreateInstance name {
-                #puts "INSIDE DO CREATE INSTANCE"
+                #puts "INSIDE DO CREATE INSTANCE $name"
                 set newInstance [[:info class] new -name $name]
                 
                 ## Copy/Import all the IOS
                 [:shade odfi::h2dl::IO children] foreach {
 
                     ## Copy and detach
+                    ################
                     set nio [$it copy]
 
                     $nio clearParents
@@ -552,7 +579,31 @@ namespace eval odfi::h2dl {
 
                     ## Res Set IO as class variable again
                     $newInstance object variable -accessor public [$nio name get] $nio
+
+                    ## Transfer Existing Connections 
+                    ################
+                    ::ignore {
+                        $it shade odfi::h2dl::Connection eachChild {
+                        {conn i} => 
+                        if {[$conn parent]==$it} {
+                            $conn detach
+                            $nio addChild $conn 
+                        } else {
+                            $conn clearChildren
+                            $conn addChild $nio
+                        }
+                    }
+                    }
+
+                    ## Transfer Attributes 
+                    ###############
+                    $it shade odfi::attributes::AttributeGroup eachChild {
+                        {attrs i} => 
+                        #puts "Found Attributes Container on base IO"
+                        $nio addChild $attrs
+                    }   
                 }
+                #puts "EOF DO CREATE INSTANCE $name"
                 return $newInstance
             }
 
@@ -769,7 +820,7 @@ namespace eval odfi::h2dl {
                             $states += $node
                             return true
                         }
-                        set vectorSize [expr int(ceil(log([$states size])/log(2)))]
+                        set vectorSize [expr  [$states size] == 0 ? 0 : int(ceil(log([$states size])/log(2)))]
                         $states foreach {
 
                             [:parent] namedValue [$it name get] ${vectorSize}'d$i
@@ -796,6 +847,11 @@ namespace eval odfi::h2dl {
                                 #puts "Rifht: [${:expression} lastChild]"
                             }
                         } 
+
+                        ## Something to be done when this transition is matched
+                        :do {
+
+                        }
                     }
 
                     ## Progress Construct is used to got to first defined state
@@ -869,7 +925,7 @@ namespace eval odfi::h2dl {
 
                     ## Size of vector 
                     set size [$states size]
-                    set vectorSize [expr int(ceil(log($size)/log(2)))]
+                    set vectorSize [expr $size == 0 ? 0 : int(ceil(log($size)/log(2)))]
                     #puts "$size States -> $vectorSize"
 
                     ## Add State Vector 
@@ -977,9 +1033,16 @@ namespace eval odfi::h2dl {
                                         }]
 
                                         ## Get the leaving of current state 
+                                        ##########
                                         set leavings [[$state shade ::odfi::h2dl::fsm::Leaving children] map {
                                             #puts "Filtering BA in requirement: [[$it children] size]"
-                                            return [$it shade ::odfi::h2dl::ast::ASTBlockingAssign children]
+                                            return [$it shade { expr [$it isClass ::odfi::h2dl::ast::ASTBlockingAssign] || [$it isClass ::odfi::h2dl::ast::ASTNonBlockingAssign] } children]
+                                        }]
+
+                                        ## Add the Dos of the Transition 
+                                        $leavings import [[$goto shade ::odfi::h2dl::fsm::Do children] map {
+                                            #puts "Filtering BA in requirement: [[$it children] size]"
+                                            return [$it shade { expr [$it isClass ::odfi::h2dl::ast::ASTBlockingAssign] || [$it isClass ::odfi::h2dl::ast::ASTNonBlockingAssign] } children]
                                         }]
 
                                         #puts "Setting UP Case option for transition to [$goto to get], state register is $stateRegister -> [$stateRegister name get]"
@@ -1017,6 +1080,8 @@ namespace eval odfi::h2dl {
                                                 :addChild $nb
                                              }
                                            }
+
+
                                         }
 
 

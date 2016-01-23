@@ -54,6 +54,9 @@ namespace eval odfi::h2dl::ast {
                 {<-} {
                     return [[namespace current]::ASTRangeSelect new ]    
                 }
+                {@} {
+                    return [[namespace current]::ASTRangeSelect new ]    
+                }
                 {,} {
                     return [[namespace current]::ASTConcat new ]    
                 }
@@ -123,7 +126,7 @@ namespace eval odfi::h2dl::ast {
         }
         set expr [string map $map $expr]
 
-        puts "Trans Expression is $expr ([llength $expr]) (before: $args)"
+        #puts "Trans Expression is $expr ([llength $expr]) (before: $args)"
 
         ## Stacks
         set stack [odfi::flist::MutableList new]

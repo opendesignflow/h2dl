@@ -18,3 +18,6 @@ package ifneeded odfi::h2dl::sim1              2.0.0 [list source [file join $di
 package ifneeded odfi::h2dl::sim::vcd          2.0.0 [list source [file join $dir  h2dl-2.x-sim-vcd.tm]]
 package ifneeded odfi::h2dl::sim2              2.0.0 [list source [file join $dir  h2dl-2.x-sim2.tm]] 
 
+## Std Lib
+##############
+package ifneeded odfi::h2dl::stdlib 2.0.0 [list source [file join $dir stdlib  stdlib-2.x.tm]] 

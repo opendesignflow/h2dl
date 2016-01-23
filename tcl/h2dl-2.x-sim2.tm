@@ -1,6 +1,6 @@
 ## The AST Package provides the core tree syntax modelisation
 package provide odfi::h2dl::sim2 2.0.0
-package require odfi::h2dl:: 2.0.0
+package require odfi::h2dl 2.0.0
 package require odfi::h2dl::sim::vcd 2.0.0
 
 

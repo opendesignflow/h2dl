@@ -1,5 +1,5 @@
 package provide odfi::h2dl::sim::vcd 2.0.0
-package require  odfi::h2dl:: 2.0.0
+package require  odfi::h2dl 2.0.0
 
 namespace eval  odfi::h2dl::sim::vcd {
 
