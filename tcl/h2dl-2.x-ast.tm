@@ -52,7 +52,7 @@ namespace eval odfi::h2dl::ast {
                     return [[namespace current]::ASTShiftRight new ]    
                 }
                 {<-} {
-                    return [[namespace current]::ASTRangeSelect new ]    
+                    return [[namespace current]::ASTRange new ]    
                 }
                 {@} {
                     return [[namespace current]::ASTRangeSelect new ]    
@@ -456,11 +456,25 @@ namespace eval odfi::h2dl::ast {
     nx::Class create ASTRangeSelect -superclass ASTOperator {
         
         :method init args {
-            set operator "<-"
+            set operator "@"
             next
         }
 
     }
+    
+    nx::Class create ASTRange -superclass ASTOperator {
+           
+       :method init args {
+           set operator "<-"
+               next
+       }
+        
+        :public method getSize args {
+            
+            return [expr int([[:firstChild] constant get]) - int([[:lastChild] constant get]) +1]
+        }
+   
+   }
 
     nx::Class create ASTConcat -superclass ASTOperator {
         

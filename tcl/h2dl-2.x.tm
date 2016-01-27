@@ -307,13 +307,27 @@ namespace eval odfi::h2dl {
             }
 
             ## Bit Mapping
-            :bitMap index name {
+            :bitMap expression name {
                 +var wire ""
                 +builder {
+                    
+                    ## Get Index/Range from Expression
+                    #puts "Bit map expression ${:expression}"
+                    set :expression [::odfi::h2dl::ast::buildAST ${:expression}]
+                    
+                    #puts "Bit map expression ${:expression} -> $expression"
+                    
+                    #exit
+                    ## Create Wire
                     set mappedWire [[[:parent] parent] wire [[:parent] name get]_[:name get]] 
                     uplevel 4 "set [$mappedWire name get] $mappedWire"
                     #puts "Mapped wire is in [[$mappedWire parent] name get]"
-                    $mappedWire assign "[:parent] <- ${:index}"      
+                    
+                    ## Set Size to wire 
+                    if {[${:expression} isClass odfi::h2dl::ast::ASTRange]} {
+                        $mappedWire width set [${:expression} getSize]
+                    }
+                    $mappedWire assign "[:parent] @ ${:expression}"      
                     set :wire $mappedWire     
                 }
             }
@@ -330,6 +344,10 @@ namespace eval odfi::h2dl {
             ## Io Transform 
             +method toOutput args {
                 :object mixins add ::odfi::h2dl::Output
+                set :type "wire"
+                ## Make sure we are in Module parent 
+                #set moduleParent [:findParentInPrimaryLine {$it isClass ::odfi::h2dl::Module}]
+               # $moduleParent addChild [current object]
             }
         }
 
@@ -438,6 +456,16 @@ namespace eval odfi::h2dl {
                     }
                     ## Check Signal 
                     #if {[[:parent]}
+                }
+            }
+            ## EOF Connection definition
+            
+            ## If Connection is in parents or child, then signal has a connection
+            +method hasConnection args {
+                if {[:shade odfi::h2dl::Connection parent]!="" || ![:shade odfi::h2dl::Connection isLeaf]} {
+                    return true 
+                } else {
+                    return false 
                 }
             }
 
@@ -681,6 +709,9 @@ namespace eval odfi::h2dl {
             :wire : Signal name {
                 +expose name
                 +exportTo ::odfi::h2dl::Logic
+                
+                
+               
             }
 
             ## Named Value is like a constant with a name 

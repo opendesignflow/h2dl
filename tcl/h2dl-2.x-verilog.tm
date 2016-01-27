@@ -22,7 +22,7 @@ package require odfi::richstream 3.0.0
 
 namespace eval odfi::h2dl::verilog {
 
-    nx::Trait create VerilogReduce {
+    nx::Class create VerilogReduce {
 
         :public method verilog:reduce {parent results} {
            # puts "Inside common Reduce"
@@ -88,6 +88,8 @@ namespace eval odfi::h2dl::verilog {
             #####################
             set str [$out toString]
             odfi::common::deleteObject $out
+
+            $results clear            
 
             #puts "Result of Module: \n\r$str"
             return $str
@@ -198,6 +200,7 @@ namespace eval odfi::h2dl::verilog {
 
             ## Return result 
             #####################
+            $results clear              
             set str [$out toString]
             odfi::common::deleteObject $out
 
@@ -225,8 +228,13 @@ namespace eval odfi::h2dl::verilog {
     }
 
     defineReduce ::odfi::h2dl::Wire {
-
-        #puts "Writing Out Register [:name get]"
+        
+        if {[:isClass ::odfi::h2dl::IO]} {
+            return [next]
+            
+        }
+        
+        puts "Writing Out Wire [:name get]"
         #puts "Current parent is  [$parent info class]"
         if {[$parent isClass ::odfi::h2dl::ast::ASTNode]} {
             return "[:name get]"
@@ -241,7 +249,8 @@ namespace eval odfi::h2dl::verilog {
     }
 
     defineReduce ::odfi::h2dl::IO {
-
+    
+        puts "Writing Out IO [:name get]"
         if {[$parent isClass ::odfi::h2dl::ast::ASTNode]} {
             return "[:name get]"
         } elseif {[$parent isClass ::odfi::h2dl::Instance]} {
@@ -283,11 +292,11 @@ namespace eval odfi::h2dl::verilog {
             }
 
             ## Definition
-            if {[:info class]=="::odfi::h2dl::Input"} {
+            if {[:isClass ::odfi::h2dl::Input]} {
                 return "$desc    input [:type get]$size [:name get]"
-            } elseif {[:info class]=="::odfi::h2dl::Output"} {
+            } elseif {[:isClass ::odfi::h2dl::Output]} {
                 return "$desc    output [:type get]$size [:name get]"
-            } elseif {[:info class]=="::odfi::h2dl::Inout"} {
+            } elseif {[:isClass ::odfi::h2dl::Inout]} {
                 return "$desc    inout [:type get]$size [:name get]"
             }
         }
@@ -325,7 +334,9 @@ namespace eval odfi::h2dl::verilog {
         ## Cases 
         ##############
         $results foreach {
-            $out << "[lindex $it 1]"
+            if {[[lindex $it 0] isClass odfi::h2dl::On]} {
+                $out << "[lindex $it 1]"
+            }
         }
 
 
@@ -341,11 +352,16 @@ namespace eval odfi::h2dl::verilog {
     defineReduce ::odfi::h2dl::On {
         #puts "Results for on, number of children: [[:children] size] , results size: [$results size]"
 
-        #puts "On Results, [[$results at 0]""
+        #puts "On Results, [[$results at 0]"
+        
+        #puts "Inside on, showing Children"
+        #:noShade eachChild {
+        #    puts "----> [$it info class]"
+        #}
         return "[:verilog:reduceTabs][:value get] : begin
 
-[$results @> map { return [[lindex $it 0] verilog:reduceTabs][lindex $it 1]} @> mkString {\n}]
-
+[$results @> filter {[lindex $it 0] isClass odfi::h2dl::ast::ASTNonBlockingAssign} @> map { return [[lindex $it 0] verilog:reduceTabs][lindex $it 1]} @> mkString {\n}]
+ 
 [:verilog:reduceTabs]end"
     }
 
@@ -398,7 +414,13 @@ namespace eval odfi::h2dl::verilog {
 
     defineReduce ::odfi::h2dl::ast::ASTRangeSelect {
         #puts "CONSTANT OUT"
-        return "[[:firstChild] name get]\[[[:lastChild] constant get]\]"
+        set rangeDef [:lastChild]
+        if {[$rangeDef isClass ::odfi::h2dl::ast::ASTConstant]} {
+            return "[[:firstChild] name get]\[[$rangeDef constant get]\]"
+        } elseif {[$rangeDef isClass ::odfi::h2dl::ast::ASTRange]} {
+            return "[[:firstChild] name get]\[[[$rangeDef firstChild] constant get]:[[$rangeDef lastChild] constant get]\]"
+        }
+        
     }
 
     defineReduce ::odfi::h2dl::ast::ASTConcat {
