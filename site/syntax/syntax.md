@@ -37,6 +37,20 @@ To map certain bits to a named variable:
     $value =  EXPRESSION
 
 ### Bit Select
-
+	
+	## Single Bit
     $value @ INDEX
+    
+    ## Range
     $value @ START:STOP
+    
+## Controls
+
+### Case 
+
+   :case [list $signal $signal ...] {
+   		
+   		:on "values as string" {
+   		
+   		}
+   }
