@@ -480,7 +480,7 @@ namespace eval odfi::h2dl {
                 set source [current object]
                 set targetParent [$sourceParent shade ::odfi::h2dl::Module parent]
 
-                puts "push to target parent: $targetParent, source parent: $sourceParent"
+                #puts "push to target parent: $targetParent, source parent: $sourceParent"
                 set resultSignal ""
                 if {$targetParent!=""} {
 

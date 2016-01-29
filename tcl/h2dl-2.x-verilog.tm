@@ -16,6 +16,7 @@
 package provide odfi::h2dl::verilog 2.0.0
 package require odfi::h2dl          2.0.0
 package require odfi::h2dl::ast     2.0.0
+package require odfi::h2dl::section 2.0.0
 
 package require odfi::richstream 3.0.0
 
@@ -720,6 +721,33 @@ namespace eval odfi::h2dl::verilog {
 
             
 
+        }
+
+        ## Add Content add the place in current module 
+        ###############################
+
+        :public method importContent content {
+
+            ## Get content from file if from file 
+            set name "Verilog Imported Content "
+            if {[file exists $content]} {
+                set name "$name from $content"
+                set content [odfi::files::readFileContent $content]
+            }
+
+            puts "IMporting ot [:info class] [:info lookup methods]-> [[:info class] info mixins], "
+            
+            :section:textContentSection $name $content
+
+        }
+
+        defineReduce ::odfi::h2dl::section::TextContentSection {
+
+            set r "
+[:verilog:reduceTabs]// Section [:name get]
+[:content get]
+"
+            return $r
         }
 
     }
