@@ -184,8 +184,10 @@ namespace eval odfi::h2dl {
 
             +method createInstance name {
 
-                
+                puts "Creating Instance of [:info class]"
                 set newNode [:doCreateInstance $name] 
+
+               # puts "Creating Instance of [:info class], $newNode"
 
                 $newNode object mixins add Instance
                 catch {$newNode mixins delete Master}
@@ -195,7 +197,7 @@ namespace eval odfi::h2dl {
                 $newNode addChild [current object]
                 #$newNode addParent [current object]
                     
-                puts "Creating Instance of [:info class], $newNode"
+                #puts "Creating Instance of [:info class], $newNode"
 
                 return $newNode
                 #return [${:baseClass} createInstance]
@@ -594,7 +596,7 @@ namespace eval odfi::h2dl {
             }
 
             +method doCreateInstance name {
-                #puts "INSIDE DO CREATE INSTANCE $name"
+                puts "INSIDE DO CREATE INSTANCE $name"
                 set newInstance [[:info class] new -name $name]
                 
                 ## Copy/Import all the IOS
