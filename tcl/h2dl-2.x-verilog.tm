@@ -27,6 +27,12 @@ namespace eval odfi::h2dl::verilog {
 
         :public method verilog:reduce {parent results} {
            # puts "Inside common Reduce"
+
+            ## Filter extra results 
+            if {[[:children] size] < [$results size]} {
+                $results drop [expr [$results size] - [[:children] size]]
+            }
+            
             next
         }
 
@@ -172,6 +178,14 @@ namespace eval odfi::h2dl::verilog {
             $out << ""
             $out << ""
 
+            #### Imported Sections 
+            $results @> filterRemove {[lindex $it 0] isClass odfi::h2dl::section::TextContentSection} @> foreach {
+                #puts "Found Logic elements"
+                $out << [[lindex $it 0] verilog:reduceTabs][lindex $it 1]
+            }
+            $out << ""
+            $out << ""
+
             #### Instances
             $out << "[:verilog:reduceTabs 1]// Instances"
             $out << "[:verilog:reduceTabs 1]//---------------"
@@ -235,7 +249,7 @@ namespace eval odfi::h2dl::verilog {
             
         }
         
-        puts "Writing Out Wire [:name get]"
+        #puts "Writing Out Wire [:name get]"
         #puts "Current parent is  [$parent info class]"
         if {[$parent isClass ::odfi::h2dl::ast::ASTNode]} {
             return "[:name get]"
@@ -251,7 +265,7 @@ namespace eval odfi::h2dl::verilog {
 
     defineReduce ::odfi::h2dl::IO {
     
-        puts "Writing Out IO [:name get]"
+        #puts "Writing Out IO [:name get]"
         if {[$parent isClass ::odfi::h2dl::ast::ASTNode]} {
             return "[:name get]"
         } elseif {[$parent isClass ::odfi::h2dl::Instance]} {
@@ -292,11 +306,23 @@ namespace eval odfi::h2dl::verilog {
                 set size " \[[expr [:width get]-1]:0\]"
             }
 
+    
+            
+
+
             ## Definition
             if {[:isClass ::odfi::h2dl::Input]} {
                 return "$desc    input [:type get]$size [:name get]"
             } elseif {[:isClass ::odfi::h2dl::Output]} {
-                return "$desc    output [:type get]$size [:name get]"
+
+                ## Make sure type is reg if an assignment is made 
+                set type [:type get]
+                if {[[:shade ::odfi::h2dl::ast::ASTNonBlockingAssign parents] size]!=0} {
+                    set type "reg"
+                }
+
+                return "$desc    output ${type}$size [:name get]"
+
             } elseif {[:isClass ::odfi::h2dl::Inout]} {
                 return "$desc    inout [:type get]$size [:name get]"
             }
@@ -391,7 +417,8 @@ namespace eval odfi::h2dl::verilog {
     ############################
 
     defineReduce ::odfi::h2dl::ast::ASTCompare {
-        #puts "CONSTANT OUT"
+        
+        ##puts "Compare out with results: [$results size]"
 
         set left [lindex [$results at 0] 1]
         set right [expr {[$results size]>1} ? {[lindex [$results at 1] 1]} : "{}"]
@@ -470,6 +497,18 @@ namespace eval odfi::h2dl::verilog {
         
     }
 
+    defineReduce ::odfi::h2dl::ast::ASTAnd {
+
+         #puts "SL out"
+
+        set left [lindex [$results at 0] 1]
+        set leftNode [lindex [$results at 0] 0]
+        set right [expr {[$results size]>1} ? {[lindex [$results at 1] 1]} : "{}"]
+
+        return "$left && $right"
+        
+    }
+
     defineReduce ::odfi::h2dl::ast::ASTIf {
 
         set left [lindex [$results at 0] 1]
@@ -490,6 +529,8 @@ namespace eval odfi::h2dl::verilog {
     ## Logic 
     ###################
     defineReduce ::odfi::h2dl::If {
+
+        #puts "Reducing if with ccount: [[:children] size] // [$results size]"
 
         set left [lindex [$results at 0] 1]
         $results pop 
@@ -552,6 +593,54 @@ namespace eval odfi::h2dl::verilog {
         odfi::common::deleteObject $out
 
         return $str
+    }
+
+    defineReduce ::odfi::h2dl::Posedge {
+
+        set out [::new odfi::richstream::RichStream #auto]
+
+        ## Setup 
+        ##############
+        $out << ""
+        $out << "[:verilog:reduceTabs]// Posedge"
+        $out << "[:verilog:reduceTabs]//------------------------"
+
+        ## Sync block
+        #################
+
+        set edge [expr {[:isClass odfi::h2dl::Negedge]} ? "{negedge}" : "{posedge}" ]
+
+        ## Find reset 
+        set resetStr ""
+        set reset [:shade ::odfi::h2dl::Reset firstChild]
+        #puts "********* RESET: $reset"
+        if {$reset!=""} {
+            set r [$reset signal get]
+            if {[string match "*_n" [$r name get]]} {
+                set resetStr " or negedge [$r name get]"
+            } else {
+                set resetStr " or posedge [$r name get]"
+            }
+        }
+        #set reset [:shade odfi::h2dl::Reset firstChild]
+        #set resetEdge "" 
+
+        $out << "[:verilog:reduceTabs]always @($edge [[:signal get] name get]$resetStr) begin"
+
+        ##### Reset 
+
+        ##### Body
+        $out << [$results @> map { return [[lindex $it 0] verilog:reduceTabs][lindex $it 1]} @> mkString { \n \n \n}]
+
+
+        ## Return 
+        #############
+        $out << "[:verilog:reduceTabs]end"
+        set str [$out toString]
+        odfi::common::deleteObject $out
+
+        return $str
+
     }
 
     ## FSM 
@@ -676,8 +765,12 @@ namespace eval odfi::h2dl::verilog {
 
                 ## Write to file if Module Master, and remove from results to avoid duplications
                 if {[$node isClass odfi::h2dl::Module] && ![$node isClass odfi::h2dl::Instance] && ![$node hasAttribute ::odfi::h2dl blackbox]} {
+
+                    puts "Module was created from file : [$node file get]"
                     puts "Module -> To File ${outputFolder}/[$node name get].v" 
-                    puts "Module Res: $__r"
+                    
+                    ##puts "Module Res: $__r"
+                    
                     odfi::files::writeToFile ${outputFolder}/[$node name get].v $__r 
 
                     ## Add to f
@@ -735,7 +828,7 @@ namespace eval odfi::h2dl::verilog {
                 set content [odfi::files::readFileContent $content]
             }
 
-            puts "IMporting ot [:info class] [:info lookup methods]-> [[:info class] info mixins], "
+            ##puts "IMporting ot [:info class] [:info lookup methods]-> [[:info class] info mixins], "
             
             :section:textContentSection $name $content
 

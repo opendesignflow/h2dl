@@ -85,8 +85,8 @@ namespace eval odfi::h2dl {
                 next 
 
                 set location  [odfi::common::findUserCodeLocation]
-                set file [lindex $location 0]
-                set line [lindex $location 1]
+                set :file [lindex $location 0]
+                set :line [lindex $location 1]
 
             }
 
@@ -128,13 +128,13 @@ namespace eval odfi::h2dl {
             ##################
 
             ## IF
-            :if condition {
+            :if : ::odfi::h2dl::Logic condition {
                 +builder {
                     set :condition [::odfi::h2dl::ast::buildAST [subst ${:condition}]]
                     :addChild ${:condition} 
                 }
             }
-            :else {
+            :else : ::odfi::h2dl::Logic {
 
             } 
             #:if condition body {
@@ -192,6 +192,7 @@ namespace eval odfi::h2dl {
 
                 ## Set master 
                 $newNode master set [current object]
+                $newNode addChild [current object]
                 #$newNode addParent [current object]
                     
                 puts "Creating Instance of [:info class], $newNode"
@@ -342,9 +343,12 @@ namespace eval odfi::h2dl {
             }
 
             ## Io Transform 
-            +method toOutput args {
+            +method toOutput {{cl ""}} {
                 :object mixins add ::odfi::h2dl::Output
                 set :type "wire"
+                if {$cl!=""} {
+                    :apply $cl
+                }
                 ## Make sure we are in Module parent 
                 #set moduleParent [:findParentInPrimaryLine {$it isClass ::odfi::h2dl::Module}]
                # $moduleParent addChild [current object]
@@ -502,6 +506,11 @@ namespace eval odfi::h2dl {
                     ## Make connection 
                     $resultSignal connection $source 
 
+                    ## Copy Attributes 
+                    :shade odfi::attributes::AttributeGroup eachChild {
+                        $resultSignal addChild [$it copy]
+                    }
+
                 }
             }
 
@@ -561,7 +570,9 @@ namespace eval odfi::h2dl {
 
             ## When a parent is added, if it is another module, then create an instance instead
             ## Same After building if we are in a hierarchy
+            ## !! Ignore this for now, because unsure it is a whished behavior
             +builder {
+                return 
 
                 set postBuildCl {
                     set p [:noShade parent end]
@@ -725,6 +736,53 @@ namespace eval odfi::h2dl {
                 :reset signal {
 
                 }
+
+                +method doReset res {
+                    #set :reset $res
+                    :reset $res {
+
+                    }
+                    :onBuildDone {
+
+                        ## Setting Up Reset 
+                        puts "Setting up reset for Stage-------------------------"
+
+                        ## Content 
+                        #set content [:shade odfi::h2dl::ast::ASTNode children]
+                        set content [:shade {$it notClass odfi::h2dl::Reset} children]
+                         $content foreach {
+                                $it detachFrom [current object] 
+                        }
+                        
+                        #$fullContent foreach {
+                        #    puts "Full Content to move: [$it info class]"
+                        #}
+                        
+                        ## Add Reset Values for Registers  to Reset if 
+                        ## Rest of the logic for the else node
+                        :if {<% return $res %> == 0} {
+
+                            $content foreach {
+                                $it walkDepthFirstPostorder -level 1 {
+                                    if {[$node isClass odfi::h2dl::ast::ASTNonBlockingAssign]} {
+
+                                        [$node firstChild] <= 0
+                                        return false 
+                                    }
+                                    return true
+                                }
+                                
+                            }
+                        }
+                        :else {
+                            $content foreach {
+                                #$it detachFrom 
+                                #puts "Setting first parent: [$it info class] [[current object] info class]"
+                                $it setFirstParent [current object]
+                            }
+                        }
+                    }
+                }
             }
             :posedge : SyncBlock signal {
                 #+type Logic
@@ -776,47 +834,7 @@ namespace eval odfi::h2dl {
                     :object-mixins add [namespace current]::Negedge
                 }
                 
-                +method doReset res {
-                    #set :reset $res
-                    :reset $res {
-
-                    }
-                    :onBuildDone {
-
-                        ## Setting Up Reset 
-                        puts "Setting up reset for Stage-------------------------"
-
-                        ## Content 
-                        #set content [:shade odfi::h2dl::ast::ASTNode children]
-                        set content [:shade {$it notClass odfi::h2dl::Reset} children]
-                         $content foreach {
-                                $it detachFrom [current object] 
-                        }
-                        
-                        #$fullContent foreach {
-                        #    puts "Full Content to move: [$it info class]"
-                        #}
-                        
-                        ## Add Reset Values for Registers  to Reset if 
-                        ## Rest of the logic for the else node
-                        :if {<% return $res %> == 0} {
-
-                            $content foreach {
-                                if {[$it isClass odfi::h2dl::ast::ASTNonBlockingAssign]} {
-
-                                    [$it firstChild] <= 0
-                                }
-                            }
-                        }
-                        :else {
-                            $content foreach {
-                                #$it detachFrom 
-                                #puts "Setting first parent: [$it info class] [[current object] info class]"
-                                $it setFirstParent [current object]
-                            }
-                        }
-                    }
-                }
+                
 
             }
 

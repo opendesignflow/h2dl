@@ -2,7 +2,21 @@ package provide odfi::h2dl::stdlib 2.0.0
 package require odfi::h2dl 2.0.0
 package require odfi::h2dl::verilog 2.0.0
 
-namespace eval h2dl::lib::counter {
+
+
+## Global Utils 
+#######################
+namespace eval ::h2dl::lib::utils {
+
+
+    ## Reset Resolution
+
+}
+
+
+## Counter 
+###############
+namespace eval ::h2dl::lib::counter {
 
     ::odfi::language::Language default {
 

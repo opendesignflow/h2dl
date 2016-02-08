@@ -31,6 +31,9 @@ namespace eval odfi::h2dl::ast {
                 {&} {
                     return [[namespace current]::ASTAnd new]    
                 }
+                {&&} {
+                    return [[namespace current]::ASTAnd new]    
+                }
 
                 {\|} {
                     return [[namespace current]::ASTBitOr new]    
@@ -82,7 +85,7 @@ namespace eval odfi::h2dl::ast {
     }
 
     ## Transform an expression to an AST
-    proc buildAST {args} {
+    proc buildAST args {
 
         if {[llength $args]==1} {
             set args [lindex $args 0]
@@ -95,28 +98,15 @@ namespace eval odfi::h2dl::ast {
         ## Resolve non resolvable $variables 
         #set args [odfi::closures::subst $args]
 
-        #set expr {}
-        #foreach i $args {
-        #    switch -exact -- $i {
-        #        ( {
-         #        set expr "$expr {"    
-        #        }
-        #       ) {
-         #        #lappend expr   
-         ##       }
-          #      default {
-         #           lappend expr $i
-         #       }
-          #  }
-       # }
-       set expr [regsub -all {\)} $args " } "]
-       set expr [regsub -all {\(} $expr " \{ "]
+      
+        set expr [regsub -all {\)} $args " \} " ]
+        set expr [regsub -all {\(} $expr " \{ " ] 
 
-        set expr [regsub -all {\[} $expr " \{\[ "]
-        set expr [regsub -all {\]} $expr " \]\} "]
+        set expr [regsub -all {\[} $expr " \{\[ " ]
+        set expr [regsub -all {\]} $expr " \]\} " ]
         
         
-        #([llength $expr])
+     
 
         ## Add spaces before and after operators 
         set operators {+ -- - / << >> <- ? == = <=}
@@ -132,8 +122,7 @@ namespace eval odfi::h2dl::ast {
         set stack [odfi::flist::MutableList new]
         $stack += [list "" $expr]
         set topParent ""
-        #set expressions [list [list "" $expr]]
-        #set res {}
+        
 
         ## Process 
         #####
@@ -146,23 +135,7 @@ namespace eval odfi::h2dl::ast {
 
             if {[llength $currentExpression]==0} {
                 continue
-            }
-
-            
-            
-            #set currentExpression [lindex [lindex $expressions 0] 1]
-            #set resultParent [lindex [lindex $expressions 0] 0]
-
-            ## Checks 
-            #############
-            #puts "Expression ($currentExpression) Size: [llength $currentExpression]"
-
-            ## Size must be 3 or 
-            #if {[llength $currentExpression]<3} {
-            #    error "Expression $currentExpression must be of format: operand operator operand . 
-            #    An operand may be a subexpression. 
-            #    Maybe a parenthesis is unbalanced"
-            #}
+            } 
 
             ## Process depending on size 
             ##################################
@@ -180,21 +153,13 @@ namespace eval odfi::h2dl::ast {
                    if {$currentParent==""} {
                         set topParent $returnNode
                    } else {
-                        #puts "Done Add Child $returnNode"
+                       
 
                         $currentParent addChild $returnNode
-                        # puts "Left: [$currentParent firstChild]"
-                        #puts "Rifht: [$currentParent lastChild]"
+                        
                    }
 
-                   #if {[odfi::common::isClass $returnNode ::odfi::flextree::FlexNode]} {
-                        #odfi::log::error "Expression $currentExpression has not understandable format"
-                    #    return $returnNode
-                   #} else {
-
-                        ## Convert to constant
-                    #    return [astOperatorToNode $returnNode]
-                   #}
+                   
                 }
                 2 {
                     
@@ -244,9 +209,7 @@ namespace eval odfi::h2dl::ast {
                     ## If not an ASTOperator, then it is a value holder from which we want to select 
                     if {![$operatorNode isClass odfi::h2dl::ast::ASTOperator]} {
                         
-                        #set source $operatorNode
-                        #set operatorNode [ASTSelect new]
-                        #$operatorNode addChild $source
+        
 
                         ## If the first node is an operator, then use it as source
                         ## The right part becomes the operator + right
@@ -306,8 +269,9 @@ namespace eval odfi::h2dl::ast {
         
         #
         #puts "Top parent is of type: [$topParent info class]"
-         #puts "Left: [$topParent firstChild]"
-        #                puts "Rifht: [$topParent lastChild]"
+        #puts "Left: [$topParent firstChild]"
+        #puts "Rifht: [$topParent lastChild]"
+
         return $topParent
 
     } 
