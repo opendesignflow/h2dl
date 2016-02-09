@@ -127,16 +127,24 @@ namespace eval odfi::h2dl {
             ## Branching
             ##################
 
-            ## IF
+            ## IF // Else // Else If 
             :if : ::odfi::h2dl::Logic condition {
                 +builder {
                     set :condition [::odfi::h2dl::ast::buildAST [subst ${:condition}]]
                     :addChild ${:condition} 
                 }
             }
+            :elseif : ::odfi::h2dl::Logic condition {
+                +builder {
+                    set :condition [::odfi::h2dl::ast::buildAST [subst ${:condition}]]
+                    :addChild ${:condition} 
+                }
+            } 
             :else : ::odfi::h2dl::Logic {
 
             } 
+
+
             #:if condition body {
 #
  #           }
@@ -330,7 +338,12 @@ namespace eval odfi::h2dl {
                     if {[${:expression} isClass odfi::h2dl::ast::ASTRange]} {
                         $mappedWire width set [${:expression} getSize]
                     }
-                    $mappedWire assign "[:parent] @ ${:expression}"      
+
+                    ## Create Assign construct, and move it to parent, to ease output generation
+                    set assignNode [$mappedWire assign "[:parent] @ ${:expression}"]
+                    $assignNode setFirstParent [$mappedWire parent]
+                    $assignNode addParent $mappedWire
+
                     set :wire $mappedWire     
                 }
             }
@@ -788,10 +801,12 @@ namespace eval odfi::h2dl {
             }
             :posedge : SyncBlock signal {
                 #+type Logic
+                +exportTo Logic
             }
 
             :negedge : SyncBlock signal {
                 #+type Logic
+                 +exportTo Logic
             }
 
             ## Analog names 

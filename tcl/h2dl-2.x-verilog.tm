@@ -410,7 +410,7 @@ namespace eval odfi::h2dl::verilog {
         #puts "NB results $results [[lindex $results 0] info class]"
         #return "[$results @> map { return [lindex $it 1]} @> mkString {-}]"
         #puts "******* ASSIGN [$results size]"
-        return "assign [[:parent] name get] = [$results @> map { return [lindex $it 1]} @> mkString ];"
+        return "assign [[:shade odfi::h2dl::Signal parent] name get] = [$results @> map { return [lindex $it 1]} @> mkString ];"
     }
 
     ## AST NOdes 
@@ -481,7 +481,7 @@ namespace eval odfi::h2dl::verilog {
         set leftNode [lindex [$results at 0] 0]
         set right [expr {[$results size]>1} ? {[lindex [$results at 1] 1]} : "{}"]
 
-        return " $left\[[expr [$leftNode width get] -1]:[expr $right ]\]  "
+        return " { $left\[0\] ,$left\[[expr [$leftNode width get] -1]:[expr $right ]\]  } "
         
     }
 
@@ -518,6 +518,7 @@ namespace eval odfi::h2dl::verilog {
         return "$left ? $right"
 
     }
+
     defineReduce ::odfi::h2dl::ast::ASTElse {
         set left [lindex [$results at 0] 1]
         set leftNode [lindex [$results at 0] 0]
@@ -535,6 +536,16 @@ namespace eval odfi::h2dl::verilog {
         set left [lindex [$results at 0] 1]
         $results pop 
         return "if ($left) begin
+[$results @> map { return [[lindex $it 0] verilog:reduceTabs][lindex $it 1]} @> mkString { \n \n \n}]
+[:verilog:reduceTabs]end"
+    }
+    defineReduce ::odfi::h2dl::Elseif {
+
+        #puts "Reducing if with ccount: [[:children] size] // [$results size]"
+
+        set left [lindex [$results at 0] 1]
+        $results pop 
+        return "else if ($left) begin
 [$results @> map { return [[lindex $it 0] verilog:reduceTabs][lindex $it 1]} @> mkString { \n \n \n}]
 [:verilog:reduceTabs]end"
     }
@@ -841,6 +852,24 @@ namespace eval odfi::h2dl::verilog {
 [:content get]
 "
             return $r
+        }
+
+         defineReduce ::odfi::h2dl::section::LogicSection {
+         
+            set out [::new odfi::richstream::RichStream #auto]
+            $out << "// Section [:name get]"
+            $out << ""
+
+            
+            $results @> foreach {
+                #puts "Found Logic elements"
+                $out << [[lindex $it 0] verilog:reduceTabs][lindex $it 1]
+            }
+
+            set str [$out toString]
+            odfi::common::deleteObject $out
+            $results clear            
+            return $str
         }
 
     }

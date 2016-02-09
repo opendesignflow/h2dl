@@ -33,6 +33,12 @@ namespace eval odfi::h2dl::section {
             +exportTo ::odfi::h2dl::Module section
         }
 
+        ## A Logic Section 
+        :logicSection : Section name {
+            +mixin ::odfi::h2dl::Logic
+            +exportToPublic
+        }
+
     }
 
 }
