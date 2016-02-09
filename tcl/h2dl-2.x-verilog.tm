@@ -834,10 +834,10 @@ namespace eval odfi::h2dl::verilog {
 
             ## Get content from file if from file 
             set name "Verilog Imported Content "
-            if {[file exists $content]} {
-                set name "$name from $content"
-                set content [odfi::files::readFileContent $content]
-            }
+            #if {[file exists $content]} {
+            #    set name "$name from $content"
+            #    set content [odfi::files::readFileContent $content]
+            #}
 
             ##puts "IMporting ot [:info class] [:info lookup methods]-> [[:info class] info mixins], "
             
@@ -847,10 +847,18 @@ namespace eval odfi::h2dl::verilog {
 
         defineReduce ::odfi::h2dl::section::TextContentSection {
 
-            set r "
-[:verilog:reduceTabs]// Section [:name get]
+            if {[file exists [:content get]]} {
+                set r "
+// Section [:name get] Imported from file [:content get]
+`include \"[file normalize [:content get]]\"
+"
+            } else {
+                            set r "
+// Section [:name get]
 [:content get]
 "
+            }
+
             return $r
         }
 
