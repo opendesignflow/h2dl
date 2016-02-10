@@ -855,7 +855,7 @@ namespace eval odfi::h2dl::verilog {
             } else {
                             set r "
 // Section [:name get]
-[:content get]
+[string map {\\\$ \$} [:content get] ]
 "
             }
 
