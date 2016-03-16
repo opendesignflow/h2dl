@@ -845,6 +845,46 @@ namespace eval odfi::h2dl::verilog {
 
         }
 
+        package require odfi::dev::hw::rtl 1.0.0
+        :public method merge inFile {
+
+            if {[file exists $inFile]} {
+                set fileContent [odfi::files::readFileContent $inFile]
+            }
+
+            ## Remove Header Definition and take content as imported 
+            ##############
+            #set res [regexp {.*module.*\);(.*)endmodule} $content -> realContent ]
+            
+            set remaining [string range $fileContent [expr [string first ");" $fileContent]+2] end]
+
+            ## Remove last "endmodule"
+            set remaining [string map {endmodule ""} $remaining]
+
+            #puts "Regexp match: $res"
+            :importContent $remaining
+
+            ## Parse IO 
+            ###################
+            set ios [odfi::dev::hw::rtl::extractIOFromFile $inFile]
+            foreach io $ios {
+                puts "Found io: [$io getName]"
+                
+                ## Create 
+                if {[$io isInput]} {
+                    set newIO [uplevel :input [$io getName]]
+                } elseif {[$io isInputOutput]} {
+                    set newIO [uplevel :inout [$io getName]]
+                } else {
+                    set newIO [uplevel :output [$io getName]]
+                }
+
+                ## Set Size 
+                $newIO width set [$io getSize]
+            }
+
+        }
+
         defineReduce ::odfi::h2dl::section::TextContentSection {
 
             if {[file exists [:content get]]} {

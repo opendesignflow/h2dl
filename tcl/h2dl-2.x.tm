@@ -448,6 +448,15 @@ namespace eval odfi::h2dl {
                     ## Checks: 
                     ##   - Check source and target signals are not the same direction
 
+                    ## Signal may be a string, but then construct a dummy 
+                    ###########
+                    if {[catch {[odfi::common::isClass ${:signal} ::odfi::h2dl::IO]}]} {
+                        set n ${:signal}
+                        set :signal [::odfi::h2dl::Signal new]
+                        ${:signal} name set $n 
+                        ${:signal} attribute odfi::h2dl::dummy true 
+                    }
+
                     ## Set name 
                     #puts "Signal is: ${:signal} [${:signal} info class] "
                     if {[odfi::common::isClass ${:signal} ::odfi::h2dl::IO] || [${:signal} isClass ::odfi::h2dl::Signal]} {
@@ -456,11 +465,11 @@ namespace eval odfi::h2dl {
                         #puts "using signal "
                         ## If parent from signal and base signal is same, just take the name of the signal
                         ## Otherwise, append the name of the target signal's parent
-                        if {[[$baseSignal parent] getPrimaryTreeDepth] == [[${:signal} parent] getPrimaryTreeDepth]} {
+                        if {[${:signal} parent]!="" && ([[$baseSignal parent] getPrimaryTreeDepth] == [[${:signal} parent] getPrimaryTreeDepth])} {
                             
                             set :name [[${:signal} parent] name get]_[$signal name get]
                         } else {
-                            set :name [$signal name get]
+                            set :name [${:signal} name get]
                             #set :name [[${:signal} parent] name get]_[$signal name get]
 
                             
@@ -777,12 +786,23 @@ namespace eval odfi::h2dl {
                         ## Rest of the logic for the else node
                         :if {<% return $res %> == 0} {
 
+                            set alreadyReset {}
                             $content foreach {
+
+                                
+
+                                ## Search in content for all the NB assign to put them as reset value 
                                 $it walkDepthFirstPostorder -level 1 {
                                     if {[$node isClass odfi::h2dl::ast::ASTNonBlockingAssign]} {
 
-                                        [$node firstChild] <= 0
+                                        ## If the target value is already a child of current if, do nothing 
+                                        if {[lsearch $alreadyReset [$node firstChild]]==-1} {
+                                            [$node firstChild] <= 0
+                                            lappend alreadyReset [$node firstChild]
+                                        
+                                        }
                                         return false 
+                                        
                                     }
                                     return true
                                 }
@@ -973,6 +993,7 @@ namespace eval odfi::h2dl {
                     
                     puts "Produce a Case "
                     set fsm [current object]
+
                     ## First: Take out the registers 
                     ##########
                     :shade ::odfi::h2dl::Signal eachChild {
@@ -1025,7 +1046,7 @@ namespace eval odfi::h2dl {
                     ## Second: Create State Case 
                     #######################
                     set stateRegister [set [:name get]_state]
-                    $tparent case [concat [set [:name get]_state] [$inputs toTCLList]] {
+                    [:parent] case [concat [set [:name get]_state] [$inputs toTCLList]] {
 
                         ## Doc 
                         :comment "---- FSM [$fsm name get] : State Case"
@@ -1099,7 +1120,6 @@ namespace eval odfi::h2dl {
                                         }]
 
                                         ## Get the leaving of current state 
-                                        ##########
                                         set leavings [[$state shade ::odfi::h2dl::fsm::Leaving children] map {
                                             #puts "Filtering BA in requirement: [[$it children] size]"
                                             return [$it shade { expr [$it isClass ::odfi::h2dl::ast::ASTBlockingAssign] || [$it isClass ::odfi::h2dl::ast::ASTNonBlockingAssign] } children]
@@ -1157,7 +1177,7 @@ namespace eval odfi::h2dl {
 
                     ## Third: Create the DataPath Case 
                     #################
-                    $tparent case [concat [set [:name get]_state]] {
+                    [:parent] case [concat [set [:name get]_state]] {
 
                         :comment "---- FSM [$fsm name get] : DataPath Case"
                         :comment "-----------"
