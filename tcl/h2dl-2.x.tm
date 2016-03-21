@@ -450,7 +450,8 @@ namespace eval odfi::h2dl {
 
                     ## Signal may be a string, but then construct a dummy 
                     ###########
-                    if {[catch {[odfi::common::isClass ${:signal} ::odfi::h2dl::IO]}]} {
+                    if {[catch {${:signal} isClass ::odfi::h2dl::Signal} res]} {
+                        #puts "Connection by string -> $res"
                         set n ${:signal}
                         set :signal [::odfi::h2dl::Signal new]
                         ${:signal} name set $n 
@@ -508,18 +509,24 @@ namespace eval odfi::h2dl {
                 set source [current object]
                 set targetParent [$sourceParent shade ::odfi::h2dl::Module parent]
 
+                #puts "Push up of IO with name [$source name get]"
                 #puts "push to target parent: $targetParent, source parent: $sourceParent"
+                
                 set resultSignal ""
                 if {$targetParent!=""} {
 
 
                     ## Copy IO 
-                    set resultSignal [[current object] copy]
+                    set   resultSignal   [[current object] copy]
+                    $resultSignal name set [[current object] name get]
+
+                   # puts "Target new IO has name  1 [$resultSignal name get] [$resultSignal info class]"
 
                     ## Rename 
                     if {$prefix!=""} {
                         $resultSignal name set ${prefix}_[$resultSignal name get]
                     }
+
                     ## Add to parent 
                     $targetParent addChild $resultSignal
 
@@ -528,7 +535,10 @@ namespace eval odfi::h2dl {
                     #}
 
                     ## Make connection 
-                    $resultSignal connection $source 
+                    #$resultSignal connection $source 
+                    $source connection $resultSignal
+
+                    # puts "Target new IO has name 2 [$resultSignal name get]"
 
                     ## Copy Attributes 
                     :shade odfi::attributes::AttributeGroup eachChild {

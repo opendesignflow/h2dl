@@ -68,7 +68,7 @@ namespace eval odfi::h2dl::verilog {
             #set typeName [:shade odfi::h2dl::Module formatHierarchyString {$it name get} "_"]_[$master name get]
             set typeName [$master name get]
 
-            puts "Writing Out Module Instance, with master: $master"
+            puts "Writing Out Module Instance of [$master name get], with master: $master"
 
             ## Prepare Stream To write out 
             #####################################
@@ -276,12 +276,20 @@ namespace eval odfi::h2dl::verilog {
             ## Child Connection 
             set cconnection [:shade odfi::h2dl::Connection child 0]
             if {$cconnection!=""} {
+                #puts "IO [:name get] has a child connection to [$cconnection firstChild] of type  [[$cconnection firstChild] info class], name is [[$cconnection firstChild] name get]"
                 set connectionString  ".[:name get]([[$cconnection firstChild] name get])"
             } else {
                  ## Parent Connection ?
                 set pconnection [:shade odfi::h2dl::Connection parent]
                 if {$pconnection!=""} {
                     set connectionString  ".[:name get]([[$pconnection parent] name get])"
+                } else {
+                    #puts "IO [:name get] had no child or parent connection"
+                    #puts "--- parents count are: [[:getParentsRaw] size]"
+                    #[:getParentsRaw] foreach {
+                    #    puts "--- Parent type: [$it info class]"
+                    #}
+                    
                 }
             }
 
@@ -782,10 +790,29 @@ namespace eval odfi::h2dl::verilog {
                     
                     ##puts "Module Res: $__r"
                     
+                    ## Write File 
                     odfi::files::writeToFile ${outputFolder}/[$node name get].v $__r 
 
                     ## Add to f
                     $fFileStream << [file normalize ${outputFolder}/[$node name get].v]
+
+                    ## Add Companion sources 
+                    ## - Copy to output 
+                    ## - Add to .f for verilog/vhdl files
+                    if {[$node hasAttribute ::odfi::verilog companions]} {
+                        foreach companion [$node getAttribute ::odfi::verilog companions] {
+                            if {![file exists $companion]} {
+                                error "Cannot Copy Companion source file $companion of [$node name get] because the file does not exist"
+                            } else {
+                                file copy -force $companion ${outputFolder}/[file tail $companion]
+
+                                ## Add to .f if necessary
+                                if {[string match "*.v" $companion] || [string match "*.vhdl" $companion] || [string match "*.vhd" $companion] || [string match "*.sv" $companion]} {
+                                    $fFileStream << [file normalize ${outputFolder}/[file tail $companion]]
+                                }
+                            }
+                        }
+                    }
 
                     ::set __r ""
                 }
