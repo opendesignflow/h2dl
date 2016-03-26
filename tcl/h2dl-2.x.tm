@@ -207,7 +207,9 @@ namespace eval odfi::h2dl {
                     
                 #puts "Creating Instance of [:info class], $newNode"
 
+                next $newNode
                 return $newNode
+                #next
                 #return [${:baseClass} createInstance]
             }
 
@@ -613,7 +615,7 @@ namespace eval odfi::h2dl {
                     
                     ## Only if added to a Module, and we are not a module ourselves already
                     if {$p!=""} {
-                        puts "*** Module added a parent [$p info class]"
+                        #puts "*** Module added a parent [$p info class]"
                         if {[$p isClass odfi::h2dl::Module] && ![:isClass odfi::h2dl::Instance]} {
 
                             set instance [:createInstance [:name get]_I]
@@ -628,7 +630,7 @@ namespace eval odfi::h2dl {
             }
 
             +method doCreateInstance name {
-                puts "INSIDE DO CREATE INSTANCE $name"
+                #puts "INSIDE DO CREATE INSTANCE $name"
                 set newInstance [[:info class] new -name $name]
                 
                 ## Copy/Import all the IOS

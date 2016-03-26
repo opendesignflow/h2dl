@@ -785,8 +785,8 @@ namespace eval odfi::h2dl::verilog {
                 ## Write to file if Module Master, and remove from results to avoid duplications
                 if {[$node isClass odfi::h2dl::Module] && ![$node isClass odfi::h2dl::Instance] && ![$node hasAttribute ::odfi::h2dl blackbox]} {
 
-                    puts "Module was created from file : [$node file get]"
-                    puts "Module -> To File ${outputFolder}/[$node name get].v" 
+                    #puts "Module was created from file : [$node file get]"
+                    #puts "Module -> To File ${outputFolder}/[$node name get].v" 
                     
                     ##puts "Module Res: $__r"
                     
