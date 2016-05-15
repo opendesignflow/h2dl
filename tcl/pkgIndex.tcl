@@ -7,7 +7,8 @@ set dir [file dirname [file normalize [info script]]]
 package ifneeded odfi::h2dl                    2.0.0 [list source [file join $dir  h2dl-2.x.tm]]
 package ifneeded odfi::h2dl::ast               2.0.0 [list source [file join $dir  h2dl-2.x-ast.tm]]
 
-package ifneeded odfi::h2dl::verilog           2.0.0 [list source [file join $dir  h2dl-2.x-verilog.tm]]
+package ifneeded odfi::h2dl::verilog           2.0.0 [list source [file join $dir  verilog h2dl-2.x-verilog.tm]]
+package ifneeded odfi::h2dl::verilog::parse    2.0.0 [list source [file join $dir  verilog h2dl-2.x-verilog-parse.tm]]
 
 package ifneeded odfi::h2dl::verification      2.0.0 [list source [file join $dir  h2dl-2.x-verification.tm]]
 

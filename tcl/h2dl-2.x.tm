@@ -16,8 +16,6 @@
 package provide odfi::h2dl 2.0.0
 
 package require odfi::language 1.0.0
-package require odfi::nx::domainmixin
-#package require odfi::h2dl::verilog 2.0.0
 package require odfi::h2dl::ast  2.0.0
 package require odfi::attributes 2.0.0
 
@@ -192,7 +190,7 @@ namespace eval odfi::h2dl {
 
             +method createInstance name {
 
-                puts "Creating Instance of [:info class]"
+                #puts "Creating Instance of [:info class]"
                 set newNode [:doCreateInstance $name] 
 
                # puts "Creating Instance of [:info class], $newNode"
