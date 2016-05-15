@@ -28,7 +28,8 @@ object VerilogAnalyse extends App {
   args.indexOf("--tools") match {
     case -1 =>
     case i =>
-      var targetFile = new File(args(i + 1))
+      var targetFile = new File(new File(args(i + 1)).getCanonicalPath)
+      println(s"Tools folder: ${args(i + 1)} -> ${targetFile.getCanonicalPath}  ")
       targetFile match {
         case f if (!f.exists || !f.isDirectory()) => sys.error("Tools Folder must exists and be directory")
         case f => H2DLModule.exttoolHarvester.basePath = targetFile
@@ -39,7 +40,7 @@ object VerilogAnalyse extends App {
   args.indexOf("--odfi") match {
     case -1 =>
     case i =>
-      var targetFile = new File(args(i + 1))
+      var targetFile = new File(args(i + 1)).getCanonicalFile
       targetFile match {
         case f if (!f.exists || !f.isDirectory()) => sys.error("ODFI Folder must exists and be directory")
         case f => H2DLModule.odfiHarvester.managerPath = targetFile
