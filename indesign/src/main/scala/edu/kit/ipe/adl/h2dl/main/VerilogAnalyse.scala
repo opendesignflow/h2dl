@@ -50,8 +50,10 @@ object VerilogAnalyse extends App {
 
   // Look For Stuff in current directory
   //---------------
+  var baseHDLPath = new File("hdl").getCanonicalFile
+  baseHDLPath.mkdirs
   var fsh = new FileSystemHarvester
-  fsh.addPath(new File("verilog").toPath())
+  fsh.addPath(baseHDLPath.toPath())
 
   fsh.addChildHarvester(new VerilogFIleHarvester)
   fsh.addChildHarvester(new VHDLFileHarvester)
