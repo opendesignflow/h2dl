@@ -94,28 +94,24 @@
 				</executions>
 			</plugin>
 
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>wagon-maven-plugin</artifactId>
-				<version>1.0</version>
-				<!-- <configuration> -->
-				<!-- <fromFile>target/${project.artifactId}-${project.version}.exe</fromFile> -->
-				<!-- <url>scp://rleys@buddy.idyria.com/data/access/osi/files/builds/tools/</url> -->
-				<!-- </configuration> -->
-				<executions>
-					<execution>
-						<id>upload-shadejar</id>
-						<phase>deploy</phase>
-						<goals>
-							<goal>upload-single</goal>
-						</goals>
-						<configuration>
-							<fromFile>target/${project.artifactId}-${project.version}-shaded.jar</fromFile>
-							<url>scp://rleys@buddy.idyria.com/data/access/osi/files/builds/adl/</url>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
+<!-- 			<plugin> -->
+<!-- 				<groupId>org.codehaus.mojo</groupId> -->
+<!-- 				<artifactId>wagon-maven-plugin</artifactId> -->
+<!-- 				<version>1.0</version> -->
+<!-- 				<executions> -->
+<!-- 					<execution> -->
+<!-- 						<id>upload-shadejar</id> -->
+<!-- 						<phase>deploy</phase> -->
+<!-- 						<goals> -->
+<!-- 							<goal>upload-single</goal> -->
+<!-- 						</goals> -->
+<!-- 						<configuration> -->
+<!-- 							<fromFile>target/${project.artifactId}-${project.version}-shaded.jar</fromFile> -->
+<!-- 							<url>scp://rleys@buddy.idyria.com/data/access/osi/files/builds/adl/</url> -->
+<!-- 						</configuration> -->
+<!-- 					</execution> -->
+<!-- 				</executions> -->
+<!-- 			</plugin> -->
 
 		</plugins>
 
