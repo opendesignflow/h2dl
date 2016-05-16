@@ -19,10 +19,10 @@ abstract class ExternalTool(val startPath: File) extends HarvestedResource {
   // Start/Stop, Process output
   //------------
 
-  def createToolProcess(args: Array[String]) : ToolProcess= {
+  def createToolProcess(args: Array[String],runFolder : File = new File("")) : ToolProcess= {
     var cmd = List(startPath.getAbsolutePath) ++ args
     var pb = new ProcessBuilder(cmd)
-
+    pb.directory(runFolder.getCanonicalFile)
     var tp = new ToolProcess(pb)
     
     tp

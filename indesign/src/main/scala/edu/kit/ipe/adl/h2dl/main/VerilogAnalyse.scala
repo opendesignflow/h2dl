@@ -13,6 +13,8 @@ import java.io.File
 import edu.kit.ipe.adl.h2dl.verilog.VerilogFIleHarvester
 import edu.kit.ipe.adl.indesign.tcl.module.TCLModule
 import edu.kit.ipe.adl.h2dl.vhdl.VHDLFileHarvester
+import edu.kit.ipe.adl.indesign.core.heart.Heart
+import edu.kit.ipe.adl.indesign.core.heart.HeartTask
 
 object VerilogAnalyse extends App {
 
@@ -50,9 +52,9 @@ object VerilogAnalyse extends App {
 
   // Look For Stuff in current directory
   //---------------
-  var baseHDLPath = new File("hdl").getCanonicalFile
+  val baseHDLPath = new File("hdl").getCanonicalFile
   baseHDLPath.mkdirs
-  var fsh = new FileSystemHarvester
+  val fsh = new FileSystemHarvester
   fsh.addPath(baseHDLPath.toPath())
 
   fsh.addChildHarvester(new VerilogFIleHarvester)
@@ -64,5 +66,22 @@ object VerilogAnalyse extends App {
 
   Harvest.run
   Harvest.printHarvesters
+  
+  // Schedule Harvesting
+  //--------
+  Heart.pump(new HeartTask[Any] {
+    
+    this.scheduleEvery = Some(3000)
+    
+    def getId = "Harvest"
+    
+    def doTask : Any = {
+      
+      Harvest.run
+      
+    }
+    
+  })
+  
 
 }

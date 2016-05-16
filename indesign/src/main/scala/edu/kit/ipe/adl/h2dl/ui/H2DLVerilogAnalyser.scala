@@ -16,6 +16,7 @@ import java.io.File
 import edu.kit.ipe.adl.h2dl.tool.gtkwave.VCDFileHarvester
 import edu.kit.ipe.adl.h2dl.tool.gtkwave.VCDFile
 import edu.kit.ipe.adl.indesign.tcl.nx.NXObject
+import edu.kit.ipe.adl.h2dl.main.VerilogAnalyse
 
 class H2DLVerilogAnalyser extends IndesignUIView {
 
@@ -56,7 +57,7 @@ class H2DLVerilogAnalyser extends IndesignUIView {
 
     div {
 
-      h1("Tools") {
+      h1("Tools 2") {
 
       }
 
@@ -67,6 +68,9 @@ class H2DLVerilogAnalyser extends IndesignUIView {
           
         }
         
+        div {
+          textContent(s"""Verilog/VHDL Folder: """+VerilogAnalyse.baseHDLPath.getCanonicalPath)
+        }
       }
 
       // VDC View
@@ -404,12 +408,12 @@ class H2DLVerilogAnalyser extends IndesignUIView {
               
               println(s"Sim Args: "+args.toList)
               
-              var process = iverilog.createToolProcess(args)
+              var process = iverilog.createToolProcess(args,vfile.getParentFile)
               process.outputToBuffer
               runProcess = Some(process)
               process.startProcessAndWait match {
                 case 0 =>
-                  var vppProcess = vpp.createToolProcess(outFile.getAbsolutePath)
+                  var vppProcess = vpp.createToolProcess(Array(outFile.getAbsolutePath),vfile.getParentFile)
                   simProcess = Some(vppProcess)
                   vppProcess.outputToBuffer
                   vppProcess.startProcessAndWait

@@ -414,7 +414,7 @@ class H2DLVHDLAnalyser extends IndesignUIView {
               runProcess = Some(process)
               process.startProcessAndWait match {
                 case 0 =>
-                  var vppProcess = ghdl.createToolProcess("-r", module.name.toString)
+                  var vppProcess = ghdl.createToolProcess(Array("-r", module.name.toString),vfile.getParentFile)
                   simProcess = Some(vppProcess)
                   vppProcess.outputToBuffer
                   vppProcess.startProcessAndWait
