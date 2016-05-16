@@ -17,11 +17,28 @@ class H2DLWelcomeView extends IndesignUIView {
 
       }
       p {
-        textContent("Welcome to H2DL")
+        textContent("""
+          Welcome to H2DL toolchain.
+          We will use this software to train Verilog/VHDL based digital designs.
+          For now analysis and simulation open source tools are embedded.""")
       }
-      
+
+      h2("Opening the Verilog/VHDL Analysis tools") {
+
+      }
+      p {
+        textContent("""
+          Select the correct tool from the menu on the Left:
+          
+          """)
+        ul {
+          li(textContent("H2DLVerilogAnalyser: If you are working with Verilog"))
+          li(textContent("H2DLVHDLAnalyser: If you are working with VHDL"))
+        }
+      }
+
       h2("Sanity Check") {
-        
+
       }
       "ui segment" :: div {
 
@@ -37,7 +54,7 @@ class H2DLWelcomeView extends IndesignUIView {
               case None =>
                 "ui error message" :: div { textContent("GTKWave is not present") }
             }
-          
+
         }
         ICarusHarvester.getResource[IVerilogTool] match {
           case Some(iverilog) =>

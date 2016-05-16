@@ -13,6 +13,32 @@ object TryIcarusVerilog extends App {
 
     Harvest, TCLModule, H2DLModule, MavenModule)
 
+  // Args
+  //------------
+
+  args.indexOf("--tools") match {
+    case -1 =>
+    case i =>
+      var targetFile = new File(new File(args(i + 1)).getCanonicalPath)
+      println(s"Tools folder: ${args(i + 1)} -> ${targetFile.getCanonicalPath}  ")
+      targetFile match {
+        case f if (!f.exists || !f.isDirectory()) => sys.error("Tools Folder must exists and be directory")
+        case f => H2DLModule.exttoolHarvester.basePath = targetFile
+      }
+
+  }
+
+  args.indexOf("--odfi") match {
+    case -1 =>
+    case i =>
+      var targetFile = new File(args(i + 1)).getCanonicalFile
+      targetFile match {
+        case f if (!f.exists || !f.isDirectory()) => sys.error("ODFI Folder must exists and be directory")
+        case f => H2DLModule.odfiHarvester.managerPath = targetFile
+      }
+
+  }
+
   Brain.init
 
   // Look For Stuff in current directory
@@ -20,25 +46,25 @@ object TryIcarusVerilog extends App {
   Harvest.run
   Harvest.run
   Harvest.printHarvesters
-  
+
   var iverilog = ICarusHarvester.getResource[IVerilogTool].get
-  
+
   // Compile
   //---------------
-  var vfile = new File("verilog/counter_tb.v").getAbsoluteFile
-  var outFile = new File(vfile.getAbsolutePath.replace(".v",".vpp"))
-  
-  var process = iverilog.createToolProcess("-g2012","-o",outFile.getAbsolutePath,vfile.getAbsolutePath)
+  var vfile = new File("verilog/counter.v").getAbsoluteFile
+  var outFile = new File(vfile.getAbsolutePath.replace(".v", ".vpp"))
+
+  println(s"V:"+vfile.getAbsolutePath)
+  var process = iverilog.createToolProcess("-g2012", "-o", outFile.getAbsolutePath, vfile.getAbsolutePath)
   //var process = iverilog.createToolProcess("-v")
-  
+
   //-- Get IO in Buffer
   process.outputToBuffer
-  
+
   //-- Run 
-  var code =  process.startProcessAndWait
- 
-  
-  println("Done: "+code)
-  println("Output: "+process.getOutputString)
-  
+  var code = process.startProcessAndWait
+
+  println("Done: " + code)
+  println("Output: " + process.getOutputString)
+
 }

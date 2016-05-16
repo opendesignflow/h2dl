@@ -57,7 +57,7 @@ class H2DLVerilogAnalyser extends IndesignUIView {
 
     div {
 
-      h1("Tools 2") {
+      h1("Verilog Toolchain") {
 
       }
 
@@ -338,12 +338,13 @@ class H2DLVerilogAnalyser extends IndesignUIView {
                 var vfile = verilogFileResource.path.toFile()
                 var outFile = new File(vfile.getAbsolutePath.replace(".v", ".vpp"))
 
-                var process = iverilog.createToolProcess("-g2012", "-o", outFile.getAbsolutePath, vfile.getAbsolutePath)
+                var process = iverilog.createToolProcess(Array("-g2012", "-o", outFile.getAbsolutePath, vfile.getAbsolutePath),vfile.getCanonicalFile.getParentFile)
                 process.outputToBuffer
-                process.startProcessAndWait
+                //process.inheritIO
+                var r = process.startProcessAndWait
                 runProcess = Some(process)
 
-                println("File run")
+                println("File run: "+r)
                 // process.clean
               }
             }

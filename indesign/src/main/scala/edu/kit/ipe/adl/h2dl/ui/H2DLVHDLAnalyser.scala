@@ -60,7 +60,7 @@ class H2DLVHDLAnalyser extends IndesignUIView {
 
     div {
 
-      h1("Tools") {
+      h1("VHDL Toolchain") {
 
       }
 

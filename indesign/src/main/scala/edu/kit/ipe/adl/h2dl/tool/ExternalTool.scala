@@ -30,7 +30,11 @@ abstract class ExternalTool(val startPath: File) extends HarvestedResource {
   
   def createToolProcess(args: String*): ToolProcess = {
     
-    createToolProcess(args.toArray)
+    var cmd = List(startPath.getAbsolutePath) ++ args
+    var pb = new ProcessBuilder(cmd)
+    var tp = new ToolProcess(pb)
+    
+    tp
   }
 
   /*var process: Option[Process] = None
@@ -126,6 +130,7 @@ class ToolProcess(val processBuilder: ProcessBuilder) extends HarvestedResource 
 
   def startProcess = process match {
     case po if(po.isEmpty || !po.get.isAlive ) =>
+      processBuilder.redirectErrorStream(true)
       var p = processBuilder.start
       this.process = Some(p)
       
