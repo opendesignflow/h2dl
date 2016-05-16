@@ -64,59 +64,6 @@ class H2DLVHDLAnalyser extends IndesignUIView {
 
       }
 
-      input {
-        
-        bindValue {
-          v : Boolean => 
-            println("Value is now: "+v)
-        }
-        
-      }
-      
-      "ui segment" :: div {
-
-        GTKWaveHarvester.getResources.size match {
-          case 0 =>
-            "ui warning message" :: div {
-              textContent("GTK Wave tool not found or not present")
-            }
-          case _ =>
-            GTKWaveHarvester.getResource[GTKWaveTool] match {
-              case Some(iverilog) =>
-                "ui  success message" :: div { textContent("GTKWave is present") }
-              case None =>
-                "ui error message" :: div { textContent("GTKWave is not present") }
-            }
-        }
-        ICarusHarvester.getResource[IVerilogTool] match {
-          case Some(iverilog) =>
-            "ui  success message" :: div { textContent("IVerilog is present") }
-          case None =>
-            "ui error message" :: div { textContent("IVerilog is not present") }
-        }
-        ICarusHarvester.getResource[VPPTool] match {
-          case Some(iverilog) =>
-            "ui success message" :: div { textContent("VPP Simulator is present") }
-          case None =>
-            "ui error message" :: div { textContent("VPP Simulator is not present") }
-        }
-
-        // TCL Reload
-        "ui info message" :: div {
-          textContent("Reload TCL Interpreter")
-          "ui button" :: button("Reload") {
-            onClick {
-              var interpreter = TCLModule.getInterpreter("default")
-              // TCLModule.reloadInterpreterPackages("default")
-              interpreter.forgetPackages("*odfi*")
-              TCLModule.reloadInterpreterPackages("default")
-            }
-          }
-        }
-
-      }
-      // EOF Tools
-
       // VDC View
       //----------------
       VCDFileHarvester.getResources.size match {

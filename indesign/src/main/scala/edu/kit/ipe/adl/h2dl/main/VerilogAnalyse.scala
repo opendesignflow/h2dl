@@ -20,7 +20,7 @@ object VerilogAnalyse extends App {
   //------------------
   Brain += (
 
-    Harvest, MavenModule, ScalaModule, EclipseModule, IndesignWWWUIModule, TCLModule, H2DLModule)
+    Harvest, IndesignWWWUIModule, TCLModule, H2DLModule)
 
   // Args
   //------------
