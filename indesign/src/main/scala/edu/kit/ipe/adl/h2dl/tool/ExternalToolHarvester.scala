@@ -39,7 +39,7 @@ class ExternalToolFolder(p:Path) extends HarvestedFile(p) {
   var libFolder = new File(p.toFile(), "lib")
   libFolder.exists() match {
     case true =>
-      println("Found lib oflder: " + libFolder)
+     // println("Found lib oflder: " + libFolder)
       System.setProperty("java.library.path", System.getProperty("java.library.path") + File.pathSeparator + libFolder)
       BridJ.addLibraryPath(libFolder.getAbsolutePath)
       //set sys_paths to null so that java.library.path will be reevalueted next time it is needed
@@ -53,7 +53,7 @@ class ExternalToolFolder(p:Path) extends HarvestedFile(p) {
   var binFolder = new File(p.toFile(), "bin")
   binFolder.exists() match {
     case true =>
-      println("Found bin oflder: " + binFolder)
+      //println("Found bin oflder: " + binFolder)
       System.setProperty("java.library.path", System.getProperty("java.library.path") + File.pathSeparator + binFolder)
       BridJ.addLibraryPath(binFolder.getAbsolutePath)
       //set sys_paths to null so that java.library.path will be reevalueted next time it is needed
