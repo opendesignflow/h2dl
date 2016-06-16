@@ -19,7 +19,8 @@ package require odfi::files 2.0.0
 
 namespace eval odfi::h2dl::verilog::parse {
 
-    proc reverse file {
+    proc reverse {file args} {
+   
    
         set res {}
         ## Content is content or file
@@ -35,11 +36,15 @@ namespace eval odfi::h2dl::verilog::parse {
         ## Look for modules
         ##########################
         #puts "content: $content"
-        set modules [regexp  -inline -all {module\s+(?:[\w_]+);?.+endmodule} $content]
+        set modules [regexp  -inline -all {module\s+(?:[\w_]+);?(?:(?!endmodule.+).)+endmodule} $content]
 
-       # puts "Found modules: $modules"
+        #puts "Found modules: $modules"
+        
         foreach moduleContent $modules {
-            lappend res [reverseModule $moduleContent]
+            
+                lappend res [reverseModule $moduleContent]
+            
+           
         }
 
         ## Single Parse remaining lines
@@ -48,49 +53,70 @@ namespace eval odfi::h2dl::verilog::parse {
         return $res
     }
 
-    proc reverseModule moduleContent {
+    proc reverseModule {moduleContent args} {
 
+
+        
+        
+        #puts "REverse: $moduleContent"
         regexp {module\s+([\w_]+);?} $moduleContent -> moduleName
 
         #puts "Module $moduleName"
-
+        
         ## Create Module
         ##################
         set __module [::odfi::h2dl::module $moduleName]
-        ${__module} apply {
+        ## Go For IOs and such
+        ###########
+                    
+        #set embeddedIORegexp {(input|output|inout)\s*(wire|reg)?\s*(\[.+:.+\]\s*)?([\w,\s]+)\s*;(\/\/.*)?}
+        set embeddedIORegexp {(input|output|inout)\s*(wire|reg)?\s*(\[.+:.+\]\s*)?([\w]+(?:\s*,\s*(?!input)[\w]+)*)\s*;?(\/\/.*)?}
+        set ios2  [regexp -all -inline $embeddedIORegexp $moduleContent]
+        foreach {match dir type size name comment} $ios2 {
+           
+           ## Get List of names
+           set names [split $name ,]
+                                    
             
-            ## Go For IOs and such
-            ###########
-            set ioRegexp {(input|output|inout)\s*(wire|reg)?\s*(\[.+:.+\]\s*)?([\w]+)\s*,?(?: )*(\/\/.*)?} 
-            set ios  [regexp -all -line -inline $ioRegexp $moduleContent]
-            
-            #puts "IOS: $ios"
-            foreach {match dir type size name comment} $ios {
-                
+            foreach name $names {
                 #puts "IOD dir: $dir -> $name"
                 if {$dir=="input"} {
-                    set io [:input $name]
+                
+                    set io [${__module} input $name]
                 } else {
-                    set io [:output $name]
+                    set io [${__module} output $name]
                 }
             }
             
-            ## Go For Instances
-            ##############
-            set instancesRegexp {\n\r?\s*((?!if|begin|else\s+)\w+)\s+(#\([\w\.\(\)]+\)\s*)?((?!(if|begin|else)\s+)\w+)\s+\(([^;]+)\);}
-            set instances  [regexp -all  -inline $instancesRegexp $moduleContent]
-            foreach {match type parameters name connections} $instances {
-                
+        }
+        
+        
+    
+            
+     
+        
+        
+        ## Go For Instances
+        ##############
+        
+        set instancesRegexp {\n\r?\s*((?!if|begin|else\s+)[\w\\_]+)\s*(#\([\w\.\(\)]+\)\s*)?((?!(if|begin|else)\s*)[\w\\\[\]_]+)?\s*\(([^;]+)\);}
+        set instances  [regexp -all  -inline $instancesRegexp $moduleContent]
+        foreach {match type parameters name connections} $instances {
+            
+            if {$name!=""} {
                 #puts "CUrrent [current object]"
                 set instanceModule [::odfi::h2dl::module $type {}]
                 #puts "Instance: $type -> $instanceModule"
                # puts "CUrrent [current object]"
                 #
                 set instance [$instanceModule createInstance $name]
-                :addChild $instance
+                ${__module} addChild $instance
             }
             
         }
+        
+        #puts "Module $moduleName -> ${__module}"
+       
   
         return ${__module}
     }

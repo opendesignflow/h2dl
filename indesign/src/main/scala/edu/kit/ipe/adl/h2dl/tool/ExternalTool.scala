@@ -30,7 +30,7 @@ abstract class ExternalTool(val startPath: File) extends HarvestedResource {
   
   def createToolProcess(args: String*): ToolProcess = {
     
-    var cmd = List(startPath.getAbsolutePath) ++ args
+    var cmd = List(startPath.getCanonicalPath) ++ args
     var pb = new ProcessBuilder(cmd)
     var tp = new ToolProcess(pb)
     
@@ -75,6 +75,7 @@ class ToolProcess(val processBuilder: ProcessBuilder) extends HarvestedResource 
   //-------------
   def inheritIO = process match {
     case None => 
+      processBuilder.redirectErrorStream(true)
       processBuilder.inheritIO()
     case _ => throw new RuntimeException("Process Already Started")
   }
@@ -130,7 +131,8 @@ class ToolProcess(val processBuilder: ProcessBuilder) extends HarvestedResource 
 
   def startProcess = process match {
     case po if(po.isEmpty || !po.get.isAlive ) =>
-      processBuilder.redirectErrorStream(true)
+      //processBuilder.redirectErrorStream(true)
+      println("Start: "+processBuilder.command())
       var p = processBuilder.start
       this.process = Some(p)
       

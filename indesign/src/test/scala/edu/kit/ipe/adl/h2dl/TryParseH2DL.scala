@@ -1,5 +1,5 @@
 package edu.kit.ipe.adl.h2dl
-
+/*
 import edu.kit.ipe.adl.indesign.core.brain.Brain
 import edu.kit.ipe.adl.indesign.core.harvest.Harvest
 import edu.kit.ipe.adl.indesign.tcl.module.TCLModule
@@ -70,4 +70,4 @@ object TryParseH2DL extends App {
   }
 
   interpreter.close
-}
+}*/

@@ -1,5 +1,5 @@
 package edu.kit.ipe.adl.h2dl
-
+/*
 import edu.kit.ipe.adl.indesign.module.maven.MavenModule
 import edu.kit.ipe.adl.indesign.core.brain.Brain
 import edu.kit.ipe.adl.indesign.core.harvest.Harvest
@@ -67,4 +67,4 @@ object TryIcarusVerilog extends App {
   println("Done: " + code)
   println("Output: " + process.getOutputString)
 
-}
+}*/

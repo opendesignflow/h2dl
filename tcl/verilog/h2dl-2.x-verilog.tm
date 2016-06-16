@@ -314,20 +314,21 @@ namespace eval odfi::h2dl::verilog {
                 set size " \[[expr [:width get]-1]:0\]"
             }
 
-    
-            
-
-
             ## Definition
             if {[:isClass ::odfi::h2dl::Input]} {
                 return "$desc    input [:type get]$size [:name get]"
             } elseif {[:isClass ::odfi::h2dl::Output]} {
 
-                ## Make sure type is reg if an assignment is made 
+                ## Make sure type is reg if an assignment is made
+                ## Assignment means the node has a Non blocking parent and is on the left
                 set type [:type get]
-                if {[[:shade ::odfi::h2dl::ast::ASTNonBlockingAssign parents] size]!=0} {
+                
+                if {[:shade ::odfi::h2dl::ast::ASTNonBlockingAssign isLeftOfOneParent]} {
                     set type "reg"
                 }
+                #if {[[:shade ::odfi::h2dl::ast::ASTNonBlockingAssign parents] size]!=0} {
+                #    set type "reg"
+                #}
 
                 return "$desc    output ${type}$size [:name get]"
 

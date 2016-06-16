@@ -66,7 +66,7 @@ class H2DLVHDLAnalyser extends IndesignUIView {
 
       // VDC View
       //----------------
-      VCDFileHarvester.getResources.size match {
+      /*VCDFileHarvester.getResources.size match {
         case 0 =>
         case _ =>
           h2("VCD File Viewer") {
@@ -113,7 +113,7 @@ class H2DLVHDLAnalyser extends IndesignUIView {
           }
 
         // EOF VCD Viewer
-      }
+      }*/
 
       // Selection
       //---------------

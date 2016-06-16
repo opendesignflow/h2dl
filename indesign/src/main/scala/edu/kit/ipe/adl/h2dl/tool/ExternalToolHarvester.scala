@@ -10,6 +10,39 @@ import org.bridj.BridJ
 class ExternalToolHarvester(var basePath: File) extends Harvester {
 
   basePath.mkdirs
+  
+  
+  //-- Lib 
+  var libFolder = new File(basePath, "lib")
+  libFolder.exists() match {
+    case true =>
+     // println("Found lib oflder: " + libFolder)
+      System.setProperty("java.library.path", System.getProperty("java.library.path") + File.pathSeparator + libFolder)
+      BridJ.addLibraryPath(libFolder.getAbsolutePath)
+      //set sys_paths to null so that java.library.path will be reevalueted next time it is needed
+      val sysPathsField = classOf[ClassLoader].getDeclaredField("sys_paths");
+      sysPathsField.setAccessible(true);
+      sysPathsField.set(null, null);
+    //System.getProperty("java.library.path")
+    case false =>
+  }
+  //-- Bin
+  var binFolder = new File(basePath, "bin")
+  binFolder.exists() match {
+    case true =>
+      //println("Found bin oflder: " + binFolder)
+      System.setProperty("java.library.path", System.getProperty("java.library.path") + File.pathSeparator + binFolder)
+      BridJ.addLibraryPath(binFolder.getAbsolutePath)
+      //set sys_paths to null so that java.library.path will be reevalueted next time it is needed
+      val sysPathsField = classOf[ClassLoader].getDeclaredField("sys_paths");
+      sysPathsField.setAccessible(true);
+      sysPathsField.set(null, null);
+    //System.getProperty("java.library.path")
+
+    case false =>
+  }
+  
+  
   override def doHarvest = {
     
     this.gather(new ExternalToolFolder(basePath.toPath))

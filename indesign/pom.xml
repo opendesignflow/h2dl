@@ -234,11 +234,16 @@
 			<groupId>edu.kit.ipe.adl.indesign</groupId>
 			<artifactId>indesign-core</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>kit.ipe.adl</groupId>
 			<artifactId>tcl-interface</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.kit.ipe.adl.indesign</groupId>
+			<artifactId>indesign-wwwui</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
