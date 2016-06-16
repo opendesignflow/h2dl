@@ -87,8 +87,10 @@ namespace eval odfi::h2dl::ast {
     ## Transform an expression to an AST
     proc buildAST args {
 
+        #puts "Build AST: [llength $args] -> $args"
         if {[llength $args]==1} {
             set args [lindex $args 0]
+            #puts "Build AST now: [llength $args] -> $args"
         }
 
         if {[odfi::common::isClass $args [namespace current]::ASTNode]} {
@@ -443,7 +445,7 @@ namespace eval odfi::h2dl::ast {
     nx::Class create ASTConcat -superclass ASTOperator {
         
         :method init args {
-            set operator ":"
+            set operator ","
             next
         }
 
@@ -515,7 +517,7 @@ namespace eval odfi::h2dl::ast {
 
             set astNode [::new [namespace parent]::ASTNonBlockingAssign $this.assignnb.#auto]
 
-            #puts "Non blocking assign on AST Value: $args"
+            puts "Non blocking assign on AST Value: $args"
 
             ## Left : target
             $astNode addChild $this

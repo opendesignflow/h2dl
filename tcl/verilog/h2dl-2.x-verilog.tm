@@ -265,10 +265,9 @@ namespace eval odfi::h2dl::verilog {
 
     defineReduce ::odfi::h2dl::IO {
     
-        #puts "Writing Out IO [:name get]"
-        if {[$parent isClass ::odfi::h2dl::ast::ASTNode]} {
-            return "[:name get]"
-        } elseif {[$parent isClass ::odfi::h2dl::Instance]} {
+        #puts "Writing Out IO [:name get] [$parent info class]"
+        
+        if {[$parent isClass ::odfi::h2dl::Instance]} {
 
             ## Connection 
             set connectionString  ".[:name get]()"
@@ -298,7 +297,7 @@ namespace eval odfi::h2dl::verilog {
             #puts "Foudn Connections on IO instance: $pconnection  $cconnection "
 
             return $connectionString 
-        } else {
+        } elseif {[$parent isClass ::odfi::h2dl::Module]} {
 
             ## Description
             set desc [:description get]
@@ -335,6 +334,8 @@ namespace eval odfi::h2dl::verilog {
             } elseif {[:isClass ::odfi::h2dl::Inout]} {
                 return "$desc    inout [:type get]$size [:name get]"
             }
+        } else {
+            return "[:name get]"
         }
 
         
@@ -461,13 +462,22 @@ namespace eval odfi::h2dl::verilog {
     }
 
     defineReduce ::odfi::h2dl::ast::ASTConcat {
-        #puts "CONSTANT OUT"
-        set left [lindex [$results at 0] 1]
-        set right [expr {[$results size]>1} ? {[lindex [$results at 1] 1]} : "{}"]
-
+    
+        #puts "ASTConcat OUT [$results size]"
+        set allRes [lindex [$results at 0] 1]
+        
+        set finalRes [$results @> map {
+            return [lindex $it 1]
+        } @> mkString [list "{" "," "}"]]
+        return $finalRes
+        
+        #set left [lindex [$results at 0] 1]
+        #set right [expr {[$results size]>1} ? {[lindex [$results at 1] 1]} : "{}"]
+        #return "{$left , $right}"
+        
         #puts "Concact out"
 
-        return "{$left , $right}"
+        
     }
 
     defineReduce ::odfi::h2dl::ast::ASTShiftLeft {

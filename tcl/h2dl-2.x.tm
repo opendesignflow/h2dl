@@ -368,6 +368,16 @@ namespace eval odfi::h2dl {
                 #set moduleParent [:findParentInPrimaryLine {$it isClass ::odfi::h2dl::Module}]
                # $moduleParent addChild [current object]
             }
+            
+            ## Io Transform 
+            +method toInput {{cl ""}} {
+                :object mixins add ::odfi::h2dl::Input
+                set :type "wire"
+                if {$cl!=""} {
+                    :apply $cl
+                }
+                
+            }
         }
 
         +type WritableSignal : Signal {
@@ -1321,16 +1331,23 @@ namespace eval odfi::h2dl {
 
         :public method <= args {
 
-            #puts "Expression for Updating [:name get] $args"
+           # puts "Expression for Updating [:name get] $args"
             
             ## Create Node for this update 
             set astNode [::odfi::h2dl::ast::ASTNonBlockingAssign new]
+
+            ## extract args
+            ## 
+            if {[llength $args]==1} {
+               set args [lindex $args 0]
+              
+           }
 
             ## Create Expression node 
             set expressionNode [::odfi::h2dl::ast::buildAST $args]
             $expressionNode  object mixins add odfi::flextree::utils::StdoutPrinter
 
-#puts "NB expression: [$expressionNode info class]"
+            #puts "NB expression: [$expressionNode info class]"
 
             ## Left: Target Register 
             ## Right: Expression
