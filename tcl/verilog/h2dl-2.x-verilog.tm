@@ -732,6 +732,14 @@ namespace eval odfi::h2dl::verilog {
             file mkdir $outputFolder
            
             
+            ## Read Timestamp
+            ## Timesteamp will be overwritten only if successful
+            #######################
+            set existingTimeStamp -1
+            if {[file exists $outputFolder/verilogen.ts]} {
+                set existingTimeStamp [expr [odfi::files::readFileContent $outputFolder/verilogen.ts]]
+            }
+            
 
             ## Start Producing
             #######################
@@ -802,6 +810,22 @@ namespace eval odfi::h2dl::verilog {
                     ##puts "Module Res: $__r"
                     
                     ## Write File 
+                    ################
+                    
+                    ## First Check existing file and its timestamp
+                    set targetFile ${outputFolder}/[$node name get].v
+                   
+                    if {$existingTimeStamp>0 && [file exists $targetFile]} {
+                        
+                        set lastModified [file mtime $targetFile ]
+                     
+                        ## If modified after last generation, make backup and warning
+                        if {$lastModified>$existingTimeStamp} {
+                            odfi::log::warn "File $targetFile was generated and modified after generation, a backup has been saved"
+                            file copy -force $targetFile ${targetFile}.genbackup
+                        }
+                    }
+                    ## Normal write
                     odfi::files::writeToFile ${outputFolder}/[$node name get].v $__r 
 
                     ## Add to f
@@ -812,10 +836,32 @@ namespace eval odfi::h2dl::verilog {
                     ## - Add to .f for verilog/vhdl files
                     if {[$node hasAttribute ::odfi::verilog companions]} {
                         foreach companion [$node getAttribute ::odfi::verilog companions] {
+                        
                             if {![file exists $companion]} {
                                 error "Cannot Copy Companion source file $companion of [$node name get] because the file does not exist"
                             } else {
-                                file copy -force $companion ${outputFolder}/[file tail $companion]
+                            
+                                ## Before copying check timestamps
+                                ## First Check existing file and its timestamp
+                                set targetFile ${outputFolder}/[file tail $companion]
+                                set allowCopy true
+                                
+                                if {$existingTimeStamp>0 && [file exists $targetFile]} {
+                                    
+                                    set lastModified [file mtime $targetFile ]
+                                 
+                                    ## If modified after last generation, make backup and warning
+                                    if {$lastModified>$existingTimeStamp} {
+                                        odfi::log::warn "File $targetFile was copied as companion and modified after copy, nothing will be done for this file"
+                                        set allowCopy false
+                                    }
+                                }
+                                
+                                ## Normal copy then
+                                if {$allowCopy} {
+                                    file copy -force $companion $targetFile
+                                }
+                                
 
                                 ## Add to .f if necessary
                                 if {[string match "*.v" $companion] || [string match "*.vhdl" $companion] || [string match "*.vhd" $companion] || [string match "*.sv" $companion]} {
@@ -831,11 +877,18 @@ namespace eval odfi::h2dl::verilog {
                
 
             } ]
+            ## EOF Res
 
             ## Write F File out 
             ##########################
             $fFileStream close
             #odfi::files::writeToFile ${outputFolder}/netlist.f [join $filesList \n]
+
+            ## Save Timestamp
+            #######################
+            set currentTimestamp [clock seconds]
+            ::odfi::files::writeToFile $outputFolder/verilogen.ts $currentTimestamp
+           
 
 
             return ""
@@ -900,13 +953,13 @@ namespace eval odfi::h2dl::verilog {
             set remaining [string map {endmodule ""} $remaining]
 
             #puts "Regexp match: $res"
-            :importContent $remaining
+            set importedContent [:importContent $remaining]
 
             ## Parse IO 
             ###################
             set ios [odfi::dev::hw::rtl::extractIOFromFile $inFile]
             foreach io $ios {
-                puts "Found io: [$io getName]"
+                #puts "Found io: [$io getName]"
                 
                 ## Create 
                 if {[$io isInput]} {
@@ -921,6 +974,8 @@ namespace eval odfi::h2dl::verilog {
                 $newIO width set [$io getSize]
             }
 
+
+            $importedContent
         }
 
         defineReduce ::odfi::h2dl::section::TextContentSection {

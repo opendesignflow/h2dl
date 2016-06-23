@@ -216,72 +216,7 @@ namespace eval odfi::h2dl {
             }
         }
 
-        ## This Type is used to produce masters
-        +type MasterSupported : H2DLObject {
-            
-            +builder {
-                
-
-                ## Get Target Class 
-                set targetClass [:info class]
-                set masterName  [:getMasterName]
-                set targetMasterObject ${masterName}_Master
-
-                #puts "(master) INSIDE Master builder for [:name get], the target class is [:info class] and master name: $targetMasterObject"
-
-                #return
-                ## Idea:    
-                ##   - Look for an Object with name: (CLASS)Master
-                ##   - If not available, create the instance with the class as superclass, and build it
-                ##   - Add Master as parent to this Instance 
-                ##   - Further Building of this instance continues, subclasses can decide what to do
-                if {![::nsf::is object $targetMasterObject ]} {
-
-                    ## Copy Object 
-                    puts "(master) -- creating master object $targetMasterObject : Using actual instance [current object] as copy --- "
-                    #::set  $targetMasterObject [[current object] copy $targetMasterObject]
-                    [current object] copy $targetMasterObject
-
-                    ## Build 
-                    odfi::closures::protect targetMasterObject
-                    $targetMasterObject object mixins add odfi::h2dl::Master
-                    $targetMasterObject name set $targetMasterObject
-                    $targetMasterObject baseClass set $targetClass
-                    $targetMasterObject buildMaster
-                    odfi::closures::restore targetMasterObject
-
-                    puts "(master) -- DONE creating master object $targetMasterObject--- "
-
-                     #puts "(master) Done"
-                }
-
-                ## Add Actual as child to Master
-                $targetMasterObject addChild [current object]
-                
-                #[current object] public object method master args "return $targetMasterObject"
-                [current object] object mixins add Instance
-                [current object] master set $targetMasterObject
-                $targetMasterObject buildInstance [current object]
-
-                ## Build as Instance 
-                #puts "Build instance of $targetMasterObject [current object]"
-                #:buildInstance
-
-
-            }
-
-            +method getMasterName args {
-                error "Please implement this function because one base class can trigger multiple masters depending on the input parameters"
-            }
-
-            +method buildMaster args {
-                error "Please implement to build the master"
-            }
-
-            +method buildInstance args {
-                next
-            }
-        }
+        
 
         +type Instance : H2DLObject  {
             +var master ""
@@ -690,43 +625,31 @@ namespace eval odfi::h2dl {
                 return $newInstance
             }
 
-            ## In case of master behavior
-            +method buildInstance node {
-                next
-                #puts "Module created Instance from master, configure instance $node now"
-                #puts "IN MASTER [:info class], configuring instance $node"
-
-                ## Copy/Import all the IOS
-                [:shade odfi::h2dl::IO children] foreach {
-
-                    ## Copy and detach
-                    set nio [$it copy]
-
-                    $nio clearParents
-                    $nio clearChildren
-
-                    ## Rebuild 
-                    $nio +build
-
-                    ## Add to current node 
-                    $node addChild $nio
-
-                    ## Set base IO as parent to find back original definition later
-                    $nio addParent $it
-
-                    ## Res Set IO as class variable again
-                    $node object variable -accessor public [$nio name get] $nio
-                }
-            }
-
+           
             +method getModelInstanceName args {
                 return ${:name}
             }
 
-            ## Submodules 
+            ## Submodules  instantiation
+            ##################
+            
+            +method instantiate {module keyword variableName} {
+                
+                ## Create instance 
+                set instance [$module createInstance $variableName]
+                
+                ## Add 
+                :addChild $instance 
+                
+                ## Set variable in parent context
+                uplevel [list set $variableName $instance]
+            }
+            
             #:submodule : Module 
 
             ## IO and signals 
+            ##################
+            
             :input : IO name {
                +expose name  
                +exposeToObject name            
@@ -754,6 +677,25 @@ namespace eval odfi::h2dl {
                 }
 
             }
+            
+            ## IO Connection
+            ##############
+            
+            
+            
+            +method connect {ioName keywork signal} {
+                
+                set io [:shade ::odfi::h2dl::IO findChildByProperty name $ioName]
+                if {$io==""} {
+                    error "Cannot Connection io $ioName from [:name get] , not found"
+                } else {
+                    $io connection $signal
+                }
+                
+            }
+            
+            ## Signals
+            ###################
 
             :register : WritableSignal name {
                 +expose name
@@ -1009,7 +951,18 @@ namespace eval odfi::h2dl {
 
                 }
 
-                +method toCase tparent {
+                +method toCase {{tparent ""}} {
+                    
+                    ## Auto set to FSM container
+                    if {$tparent==""} {
+                        set p [:parent]
+                        if {$p=="" || ![$p isClass ::odfi::h2dl::Logic]} {
+                            error "Cannot create FSM to non Logic Parent"
+                        } else {
+                            set tparent $p
+                        }
+                        
+                    }
                     
                     puts "Produce a Case "
                     set fsm [current object]

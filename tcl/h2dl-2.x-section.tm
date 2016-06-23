@@ -24,13 +24,19 @@ namespace eval odfi::h2dl::section {
 
         +type Section : ::odfi::h2dl::H2DLObject  {
 
-
-
+           
         }
 
         ## A Text Content Section, just some text 
         :textContentSection : Section name  content {
             +exportTo ::odfi::h2dl::Module section
+            
+            +method removeCommentSection name {
+                       
+               regsub -all "\\s*\\/\\/\[^\\n\]*sect:$name.+eofsect:$name\\n" ${:content} "" :content
+           
+           }
+           
         }
 
         ## A Logic Section 
