@@ -646,9 +646,9 @@ namespace eval odfi::h2dl::verilog {
         #puts "********* RESET: $reset"
         if {$reset!=""} {
             set r [$reset signal get]
-            if {[string match "*_n" [$r name get]]} {
+            if {[$r hasAttribute ::odfi::h2dl::reset async] && [string match "*_n" [$r name get]]} {
                 set resetStr " or negedge [$r name get]"
-            } else {
+            } elseif {[$r hasAttribute ::odfi::h2dl::reset async]} {
                 set resetStr " or posedge [$r name get]"
             }
         }
@@ -852,7 +852,8 @@ namespace eval odfi::h2dl::verilog {
                                  
                                     ## If modified after last generation, make backup and warning
                                     if {$lastModified>$existingTimeStamp} {
-                                        odfi::log::warn "File $targetFile was copied as companion and modified after copy, nothing will be done for this file"
+                                        odfi::log::warn "File $targetFile was copied as companion and modified after copy, nothing will be done for this file but a copy was saved"
+                                        file copy -force $targetFile ${targetFile}.genbackup
                                         set allowCopy false
                                     }
                                 }
