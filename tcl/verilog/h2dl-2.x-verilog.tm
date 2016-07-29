@@ -412,7 +412,14 @@ namespace eval odfi::h2dl::verilog {
 
         #puts "NB results $results [[lindex [$results at 1] 0] info class]"
         #return "[$results @> map { return [lindex $it 1]} @> mkString {-}]"
-        return "[lindex [$results at 0] 1] <= [lindex [$results at 1] 1];"
+        
+        ## Right part may be a concat without the
+        set right "[lindex [$results at 1] 1]"
+        if {[string first "," $right]!=-1 && [string first "\}" $right]==-1} {
+            set right "{$right}"
+        }
+        
+        return "[lindex [$results at 0] 1] <= $right;"
     }
 
     defineReduce ::odfi::h2dl::Assign {
