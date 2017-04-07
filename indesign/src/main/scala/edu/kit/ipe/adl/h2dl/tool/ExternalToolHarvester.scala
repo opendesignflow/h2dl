@@ -2,8 +2,8 @@ package edu.kit.ipe.adl.h2dl.tool
 
 import java.io.File
 
-import edu.kit.ipe.adl.indesign.core.harvest.Harvester
-import edu.kit.ipe.adl.indesign.core.harvest.fs.HarvestedFile
+import org.odfi.indesign.core.harvest.Harvester
+import org.odfi.indesign.core.harvest.fs.HarvestedFile
 import java.nio.file.Path
 import org.bridj.BridJ
 

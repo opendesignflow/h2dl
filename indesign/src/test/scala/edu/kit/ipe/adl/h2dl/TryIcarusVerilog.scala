@@ -1,11 +1,11 @@
 package edu.kit.ipe.adl.h2dl
 /*
-import edu.kit.ipe.adl.indesign.module.maven.MavenModule
-import edu.kit.ipe.adl.indesign.core.brain.Brain
-import edu.kit.ipe.adl.indesign.core.harvest.Harvest
-import edu.kit.ipe.adl.indesign.tcl.module.TCLModule
-import edu.kit.ipe.adl.h2dl.tool.icarus.ICarusHarvester
-import edu.kit.ipe.adl.h2dl.tool.icarus.IVerilogTool
+import org.odfi.tcl.indesign.module.maven.MavenModule
+import org.odfi.tcl.indesign.core.brain.Brain
+import org.odfi.tcl.indesign.core.harvest.Harvest
+import org.odfi.tcl.indesign.tcl.module.TCLModule
+import org.odfi.tcl.h2dl.tool.icarus.ICarusHarvester
+import org.odfi.tcl.h2dl.tool.icarus.IVerilogTool
 import java.io.File
 
 object TryIcarusVerilog extends App {

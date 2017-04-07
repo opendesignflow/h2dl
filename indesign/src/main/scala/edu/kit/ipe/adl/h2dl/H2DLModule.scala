@@ -2,20 +2,20 @@ package edu.kit.ipe.adl.h2dl
 
 import java.io.File
 
+import org.odfi.indesign.core.harvest.Harvest
+import org.odfi.indesign.core.module.IndesignModule
+
 import edu.kit.ipe.adl.h2dl.tool.ExternalToolHarvester
 import edu.kit.ipe.adl.h2dl.tool.ghdl.GHDLHarvester
 import edu.kit.ipe.adl.h2dl.tool.gtkwave.GTKWaveHarvester
-import edu.kit.ipe.adl.h2dl.tool.gtkwave.VCDFileHarvester
 import edu.kit.ipe.adl.h2dl.tool.icarus.ICarusHarvester
-import edu.kit.ipe.adl.h2dl.ui.H2DLVHDLAnalyser
-import edu.kit.ipe.adl.h2dl.ui.H2DLVerilogAnalyser
-import edu.kit.ipe.adl.h2dl.ui.H2DLWelcomeView
-import edu.kit.ipe.adl.indesign.core.harvest.Harvest
-import edu.kit.ipe.adl.indesign.core.harvest.fs.FileSystemHarvester
-import edu.kit.ipe.adl.indesign.core.module.IndesignModule
-import edu.kit.ipe.adl.indesign.core.module.ui.www.WWWViewHarvester
-import edu.kit.ipe.adl.odfi.ODFIHarvester
 import edu.kit.ipe.adl.h2dl.tool.rsync.RsyncToolHarvester
+
+import edu.kit.ipe.adl.h2dl.project.H2DLProjectHarvester
+import edu.kit.ipe.adl.h2dl.tool.sphynx.SphynxProjectHarvester
+import edu.kit.ipe.adl.h2dl.tool.msys.MsysHarvester
+import org.odfi.indesign.core.harvest.fs.FileSystemHarvester
+import org.odfi.indesign.core.harvest.fs.FSGlobalWatch
 
 object H2DLModule extends IndesignModule {
 
@@ -24,6 +24,8 @@ object H2DLModule extends IndesignModule {
   onLoad {
 
     println("IN H2DLModule LOAD")
+    requireModule(FSGlobalWatch)
+    
     // Add UI
     //-------------
     /*IndesignWWWView.defaultView = Some(new H2DLWelcomeView)
@@ -32,10 +34,20 @@ object H2DLModule extends IndesignModule {
 
     // Add Tools Harvester
     //-------------------
+    //Harvest.registerAutoHarvesterObject(classOf[FileSystemHarvester],H2DLProjectHarvester)
+    //Harvest --> H2DLProjectHarvester
+    Harvest.addHarvester(FileSystemHarvester)
+    FileSystemHarvester --> H2DLProjectHarvester
+    H2DLProjectHarvester --> SphynxProjectHarvester
+    Harvest --> MsysHarvester
+
+    //H2DLProjectHarvester --> (new ExternalToolHarvester)
+
     Harvest.registerAutoHarvesterObject(classOf[ExternalToolHarvester], GTKWaveHarvester)
     Harvest.registerAutoHarvesterObject(classOf[ExternalToolHarvester], ICarusHarvester)
     Harvest.registerAutoHarvesterObject(classOf[ExternalToolHarvester], GHDLHarvester)
     Harvest.registerAutoHarvesterObject(classOf[ExternalToolHarvester], RsyncToolHarvester)
+
     config match {
       case Some(config) =>
         var keys = config.getKeys("externalTool", "folder")
@@ -49,7 +61,7 @@ object H2DLModule extends IndesignModule {
               //-- Does not work
             }
         }
-       
+
       case None =>
     }
     /*Harvest.addHarvester(exttoolHarvester)
@@ -67,5 +79,12 @@ object H2DLModule extends IndesignModule {
     //var odfiHarvester = new ODFIHarvester(new File("""E:\Common\Projects\git\odfi-manager"""))
     //var odfiHarvester = new ODFIHarvester(new File("""odfi-manager"""))
     //Harvest.addHarvester(odfiHarvester)
+  }
+
+  onStop {
+    H2DLProjectHarvester.clean
+    //SphynxProjectHarvester.clean
+    MsysHarvester.clean
+
   }
 }

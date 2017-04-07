@@ -6,12 +6,18 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>H2DL Indesign Module</name>
 	<parent>
-		<groupId>com.idyria.osi</groupId>
+		<groupId>org.odfi</groupId>
 		<artifactId>superpom-scala</artifactId>
-		<version>2.11.8.r1</version>
+		<version>2.12.1.r9</version>
 	</parent>
 
-	<!-- Repositories to find packages -->
+	<properties>
+		<ooxoo.version>3.2.3-SNAPSHOT</ooxoo.version>
+	</properties>
+
+
+
+	<!-- Repositories to find OSI packages -->
 	<!-- ############################################## -->
 	<pluginRepositories>
 		<pluginRepository>
@@ -29,22 +35,104 @@
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
-			<id>idyria.central</id>
+			<id>odfi.central</id>
 			<name>plugins-release</name>
-			<url>http://www.idyria.com/access/osi/artifactory/libs-release</url>
+			<url>http://www.opendesignflow.org/maven/repository/internal/</url>
 		</pluginRepository>
 		<pluginRepository>
 			<snapshots>
 				<enabled>true</enabled>
 			</snapshots>
-			<id>idyria.snapshots</id>
+			<id>odfi.snapshots</id>
 			<name>plugins-snapshot</name>
-			<url>http://www.idyria.com/access/osi/artifactory/libs-snapshot</url>
+			<url>http://www.opendesignflow.org/maven/repository/snapshots/</url>
 		</pluginRepository>
 	</pluginRepositories>
+	<repositories>
+		<repository>
+			<id>sonatype</id>
+			<name>Sonatype OSS Snapshots Repository</name>
+			<url>http://oss.sonatype.org/content/groups/public</url>
+		</repository>
+		<!-- For old snapshots, please use groupId `com.jnaerator` and the following 
+			repo -->
+		<repository>
+			<id>nativelibs4java-repo</id>
+			<url>http://nativelibs4java.sourceforge.net/maven</url>
+		</repository>
+		<repository>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<id>odfi.central</id>
+			<name>odfi-release</name>
+			<url>http://www.opendesignflow.org/maven/repository/internal/</url>
+		</repository>
+		<repository>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<id>odfi.snapshots</id>
+			<name>odfi-snapshot</name>
+			<url>http://www.opendesignflow.org/maven/repository/snapshots/</url>
+		</repository>
+	</repositories>
+
+
 	<build>
 		<plugins>
-
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.9.1</version>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${project.build.directory}/generated-sources/scala</source>
+								<source>src/examples/scala</source>
+							</sources>
+						</configuration>
+					</execution>
+					<execution>
+						<phase>pre-site</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${project.build.directory}/generated-sources/scala</source>
+								<source>src/examples/scala</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-ooxoo-plugin</artifactId>
+				<version>${ooxoo.version}</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.odfi.indesign.ide</groupId>
+						<artifactId>indesign-ide-core</artifactId>
+						<version>1.0.0-SNAPSHOT</version>
+					</dependency>
+				</dependencies>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>generate-sources</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -94,24 +182,24 @@
 				</executions>
 			</plugin>
 
-<!-- 			<plugin> -->
-<!-- 				<groupId>org.codehaus.mojo</groupId> -->
-<!-- 				<artifactId>wagon-maven-plugin</artifactId> -->
-<!-- 				<version>1.0</version> -->
-<!-- 				<executions> -->
-<!-- 					<execution> -->
-<!-- 						<id>upload-shadejar</id> -->
-<!-- 						<phase>deploy</phase> -->
-<!-- 						<goals> -->
-<!-- 							<goal>upload-single</goal> -->
-<!-- 						</goals> -->
-<!-- 						<configuration> -->
-<!-- 							<fromFile>target/${project.artifactId}-${project.version}-shaded.jar</fromFile> -->
-<!-- 							<url>scp://rleys@buddy.idyria.com/data/access/osi/files/builds/adl/</url> -->
-<!-- 						</configuration> -->
-<!-- 					</execution> -->
-<!-- 				</executions> -->
-<!-- 			</plugin> -->
+			<!-- <plugin> -->
+			<!-- <groupId>org.codehaus.mojo</groupId> -->
+			<!-- <artifactId>wagon-maven-plugin</artifactId> -->
+			<!-- <version>1.0</version> -->
+			<!-- <executions> -->
+			<!-- <execution> -->
+			<!-- <id>upload-shadejar</id> -->
+			<!-- <phase>deploy</phase> -->
+			<!-- <goals> -->
+			<!-- <goal>upload-single</goal> -->
+			<!-- </goals> -->
+			<!-- <configuration> -->
+			<!-- <fromFile>target/${project.artifactId}-${project.version}-shaded.jar</fromFile> -->
+			<!-- <url>scp://rleys@buddy.idyria.com/data/access/osi/files/builds/adl/</url> -->
+			<!-- </configuration> -->
+			<!-- </execution> -->
+			<!-- </executions> -->
+			<!-- </plugin> -->
 
 		</plugins>
 
@@ -128,13 +216,13 @@
 		<profile>
 			<id>windows</id>
 			<activation>
-		      <os>
-		        <family>windows</family> 
-	      		</os>
-		    </activation>
-		    <build>
-		    	<plugins>
-		    		<plugin>
+				<os>
+					<family>windows</family>
+				</os>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
 						<groupId>com.akathist.maven.plugins.launch4j</groupId>
 						<artifactId>launch4j-maven-plugin</artifactId>
 						<executions>
@@ -195,56 +283,22 @@
 							</execution>
 						</executions>
 					</plugin>
-		    	</plugins>
-		    </build>
+				</plugins>
+			</build>
 		</profile>
 	</profiles>
 
-	<repositories>
-		<repository>
-			<id>sonatype</id>
-			<name>Sonatype OSS Snapshots Repository</name>
-			<url>http://oss.sonatype.org/content/groups/public</url>
-		</repository>
-		<!-- For old snapshots, please use groupId `com.jnaerator` and the following 
-			repo -->
-		<repository>
-			<id>nativelibs4java-repo</id>
-			<url>http://nativelibs4java.sourceforge.net/maven</url>
-		</repository>
-		<repository>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>idyria.central</id>
-			<name>libs-release</name>
-			<url>http://www.idyria.com/access/osi/artifactory/libs-release</url>
-		</repository>
-		<repository>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<id>idyria.snapshots</id>
-			<name>libs-snapshot</name>
-			<url>http://www.idyria.com/access/osi/artifactory/libs-snapshot</url>
-		</repository>
-	</repositories>
+
 	<dependencies>
 		<dependency>
-			<groupId>edu.kit.ipe.adl.indesign</groupId>
-			<artifactId>indesign-core</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>kit.ipe.adl</groupId>
+			<groupId>org.odfi.tcl</groupId>
 			<artifactId>tcl-interface</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>edu.kit.ipe.adl.indesign</groupId>
-			<artifactId>indesign-wwwui</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<groupId>org.odfi.indesign.ide</groupId>
+			<artifactId>indesign-ide-core</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 </project>

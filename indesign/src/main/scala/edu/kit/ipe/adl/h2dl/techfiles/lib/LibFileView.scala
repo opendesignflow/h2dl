@@ -1,9 +1,9 @@
 package edu.kit.ipe.adl.h2dl.techfiles.lib
 
-import edu.kit.ipe.adl.indesign.core.module.ui.www.IndesignUIView
-import edu.kit.ipe.adl.h2dl.ui.H2DLWelcomeView
-import edu.kit.ipe.adl.indesign.tcl.nx.NXObject
 
+import org.odfi.tcl.nx.NXObject
+
+/*
 class LibFileView extends IndesignUIView {
 
   var targetFile: Option[LibFile] = None
@@ -328,4 +328,4 @@ class LibFileView extends IndesignUIView {
     }
   }
 
-}
+}*/

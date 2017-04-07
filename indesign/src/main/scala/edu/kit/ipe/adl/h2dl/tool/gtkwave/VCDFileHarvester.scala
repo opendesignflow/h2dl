@@ -1,9 +1,9 @@
 package edu.kit.ipe.adl.h2dl.tool.gtkwave
 
-import edu.kit.ipe.adl.indesign.core.harvest.Harvester
-import edu.kit.ipe.adl.indesign.core.harvest.fs.HarvestedFile
+import org.odfi.indesign.core.harvest.Harvester
+import org.odfi.indesign.core.harvest.fs.HarvestedFile
 
-class VCDFileHarvester extends Harvester{
+object VCDFileHarvester extends Harvester{
   
   this.onDeliverFor[HarvestedFile] {
     case f if (f.path.toFile().getName.endsWith(".vcd")) => 

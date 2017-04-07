@@ -1,9 +1,9 @@
 package edu.kit.ipe.adl.h2dl.pdf
 
-import edu.kit.ipe.adl.indesign.core.harvest.Harvester
-import edu.kit.ipe.adl.indesign.core.harvest.fs.HarvestedFile
+import org.odfi.indesign.core.harvest.Harvester
+import org.odfi.indesign.core.harvest.fs.HarvestedFile
 
-class PDFHarvester extends Harvester {
+object PDFHarvester extends Harvester {
   
   this.onDeliverFor[HarvestedFile] {
     case f if (f.path.toFile.getName.endsWith("pdf")) => 

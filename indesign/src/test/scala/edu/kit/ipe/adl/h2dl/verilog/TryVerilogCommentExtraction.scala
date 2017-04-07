@@ -1,6 +1,6 @@
 package edu.kit.ipe.adl.h2dl.verilog
 
-import edu.kit.ipe.adl.indesign.core.harvest.fs.HarvestedFile
+import org.odfi.indesign.core.harvest.fs.HarvestedFile
 import java.io.File
 
 object TryVerilogCommentExtraction extends App {

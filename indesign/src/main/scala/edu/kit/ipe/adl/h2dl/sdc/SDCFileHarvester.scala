@@ -1,10 +1,10 @@
 package edu.kit.ipe.adl.h2dl.sdc
 
 import edu.kit.ipe.adl.h2dl.techfiles.lef.LEFFile
-import edu.kit.ipe.adl.indesign.core.harvest.fs.HarvestedFile
-import edu.kit.ipe.adl.indesign.core.harvest.Harvester
+import org.odfi.indesign.core.harvest.fs.HarvestedFile
+import org.odfi.indesign.core.harvest.Harvester
 
-class SDCFileHarvester extends Harvester {
+object SDCFileHarvester extends Harvester {
   
   this.onDeliverFor[HarvestedFile] {
     case f if(f.path.toFile.getCanonicalPath.endsWith(".sdc"))=> 

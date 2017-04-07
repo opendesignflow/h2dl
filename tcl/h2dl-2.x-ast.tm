@@ -2,6 +2,7 @@
 package provide odfi::h2dl::ast 2.0.0
 package require odfi::attributes 2.0.0
 package require odfi::flextree 1.0.0
+package require odfi::h2dl 2.0.0
 
 namespace eval odfi::h2dl::ast {
 
@@ -22,6 +23,9 @@ namespace eval odfi::h2dl::ast {
                 }
                 {==} {
                    return [[namespace current]::ASTCompare new]    
+                }
+                {gt} {
+                   return [[namespace current]::ASTGreaterThan new]    
                 }
 
                 {[0-9]+} {
@@ -352,6 +356,7 @@ namespace eval odfi::h2dl::ast {
     createASTOperand Add +
     createASTOperand Multiply *
     createASTOperand Compare ==
+    createASTOperand GreaterThan >=
 
     #################################################
     ## Simple Logical and Mathematical Operators 
@@ -383,6 +388,13 @@ namespace eval odfi::h2dl::ast {
             next
         }
     }
+    nx::Class create ASTGreaterThan -superclass ASTOperator {
+      :method init args {
+            set operator ">="
+            next
+        }
+    }
+    
 
     nx::Class create ASTAnd -superclass ASTOperator {
     
@@ -438,6 +450,12 @@ namespace eval odfi::h2dl::ast {
         :public method getSize args {
             
             return [expr int([[:firstChild] constant get]) - int([[:lastChild] constant get]) +1]
+        }
+        :public method from v {
+            :addFirstChild [::odfi::h2dl::ast::ASTConstant new -constant $v]
+        }
+        :public method to v {
+            :addChild [::odfi::h2dl::ast::ASTConstant new -constant $v]
         }
    
    }
@@ -672,6 +690,43 @@ namespace eval odfi::h2dl::ast {
 
         }
     }
+    
+    ## Export Interface
+    #############
+    ::nx::Class create ASTInterfaceTrait {
+        
+        :public method range {from KW to} {
+            
+            ## Invert from/to depending on size
+            if {$from>$to} {
+                set t $from 
+                set from $to
+                set $to $t
+            }
+            
+            ## Create range selection
+            set rangeSelect [::odfi::h2dl::ast::ASTRangeSelect new]
+            $rangeSelect addChild [current object]
+            
+            ## Create range
+            set range [::odfi::h2dl::ast::ASTRange new]
+            $rangeSelect addChild $range
+            $range from $from
+            $range  to $to 
+            
+            return $rangeSelect
+            
+        }
+        
+        :public method concat with {
+            
+            set concat [::odfi::h2dl::ast::ASTConcat new]
+            $concat addChild [current object]
+            $concat addChild $with
+        }
+    
+    }
+    ::odfi::h2dl::Signal domain-mixins add [namespace current]::ASTInterfaceTrait -prefix expr
 
 }
 

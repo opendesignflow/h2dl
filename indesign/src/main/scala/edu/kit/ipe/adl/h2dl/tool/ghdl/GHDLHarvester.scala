@@ -4,7 +4,7 @@ import edu.kit.ipe.adl.h2dl.tool.gtkwave.GTKWaveTool
 import edu.kit.ipe.adl.h2dl.tool.ExternalToolFolder
 import java.io.File
 import edu.kit.ipe.adl.h2dl.tool.ExternalTool
-import edu.kit.ipe.adl.indesign.core.harvest.Harvester
+import org.odfi.indesign.core.harvest.Harvester
 
 object GHDLHarvester extends Harvester {
   

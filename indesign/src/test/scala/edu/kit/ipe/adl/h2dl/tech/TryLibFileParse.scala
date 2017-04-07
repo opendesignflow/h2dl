@@ -1,13 +1,12 @@
 package edu.kit.ipe.adl.h2dl.tech
 
-import edu.kit.ipe.adl.indesign.core.harvest.fs.HarvestedFile
+import org.odfi.indesign.core.harvest.fs.HarvestedFile
 import edu.kit.ipe.adl.h2dl.techfiles.lib.LibFile
 import java.io.File
-import edu.kit.ipe.adl.indesign.core.brain.Brain
+import org.odfi.indesign.core.brain.Brain
 import edu.kit.ipe.adl.h2dl.H2DLModule
-import edu.kit.ipe.adl.indesign.core.module.ui.www.IndesignWWWUIModule
-import edu.kit.ipe.adl.indesign.tcl.module.TCLModule
-import edu.kit.ipe.adl.indesign.core.harvest.Harvest
+import org.odfi.tcl.module.TCLModule
+import org.odfi.indesign.core.harvest.Harvest
 import edu.kit.ipe.adl.h2dl.tool.rsync.RsyncTool
 import edu.kit.ipe.adl.h2dl.tool.rsync.RsyncToolHarvester
 

@@ -1,7 +1,7 @@
 package edu.kit.ipe.adl.h2dl.doc
 
-import edu.kit.ipe.adl.indesign.core.harvest.HarvestedResource
-import edu.kit.ipe.adl.indesign.core.harvest.fs.HarvestedFile
+import org.odfi.indesign.core.harvest.HarvestedResource
+import org.odfi.indesign.core.harvest.fs.HarvestedFile
 
 trait CrossReferenceContainer extends HarvestedResource {
   

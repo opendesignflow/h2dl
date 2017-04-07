@@ -2,7 +2,7 @@ package edu.kit.ipe.adl.h2dl.tool.icarus
 
 import edu.kit.ipe.adl.h2dl.tool.ExternalTool
 import java.io.File
-import edu.kit.ipe.adl.indesign.core.harvest.Harvester
+import org.odfi.indesign.core.harvest.Harvester
 import edu.kit.ipe.adl.h2dl.tool.ExternalToolFolder
 
 class IVerilogTool(p:File) extends ExternalTool(p) {

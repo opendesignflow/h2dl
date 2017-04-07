@@ -6,3 +6,10 @@ pom.xml.next
 release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
+indesign/.cache-main
+indesign/.cache-tests
+indesign/.classpath
+indesign/.project
+**/.indesign/*
+**/.settings/*
+indesign/indesign-config/

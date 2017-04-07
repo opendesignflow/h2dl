@@ -29,9 +29,9 @@ namespace eval odfi::h2dl::verilog {
            # puts "Inside common Reduce"
 
             ## Filter extra results 
-            if {[[:children] size] < [$results size]} {
-                $results drop [expr [$results size] - [[:children] size]]
-            }
+            #if {[[:children] size] < [$results size]} {
+             #   $results drop [expr [$results size] - [[:children] size]]
+            #}
             
             next
         }
@@ -68,7 +68,7 @@ namespace eval odfi::h2dl::verilog {
             #set typeName [:shade odfi::h2dl::Module formatHierarchyString {$it name get} "_"]_[$master name get]
             set typeName [$master name get]
 
-            puts "Writing Out Module Instance of [$master name get], with master: $master"
+            #puts "Writing Out Module Instance of [$master name get], with master: $master"
 
             ## Prepare Stream To write out 
             #####################################
@@ -105,7 +105,7 @@ namespace eval odfi::h2dl::verilog {
 
         } elseif {[:isClass ::odfi::h2dl::Master] && ![:hasAttribute ::odfi::h2dl blackbox]} {
 
-            puts "Writing Out Module [:name get]"
+            #puts "Writing Out Module [:name get]"
             puts "Results Content: [$results size]"
             
             ## Type name from hierarchy if enabled
@@ -152,7 +152,8 @@ namespace eval odfi::h2dl::verilog {
             #### Signaling
             $out << "[:verilog:reduceTabs 1]// Signaling"
             $out << "[:verilog:reduceTabs 1]//---------------"
-
+            
+           
             # Output results from registers 
             #puts "Doing Registers with method chain $results"
             $results @> filterRemove {[lindex $it 0] isClass odfi::h2dl::Signal} @> mapSort {[lindex $it 0] name get} @> foreach {
@@ -186,6 +187,15 @@ namespace eval odfi::h2dl::verilog {
             $out << ""
             $out << ""
 
+            #### Logic
+            $out << "[:verilog:reduceTabs 1]// Logic"
+            $out << "[:verilog:reduceTabs 1]//---------------"
+
+            $results @> filterRemove {[lindex $it 0] isClass odfi::h2dl::Logic} @> foreach {
+                #puts "Found Logic elements"
+                $out << [[lindex $it 0] verilog:reduceTabs][lindex $it 1]
+            }
+
             #### Instances
             $out << "[:verilog:reduceTabs 1]// Instances"
             $out << "[:verilog:reduceTabs 1]//---------------"
@@ -198,14 +208,7 @@ namespace eval odfi::h2dl::verilog {
             $out << ""
             $out << ""
 
-            #### Logic
-            $out << "[:verilog:reduceTabs 1]// Logic"
-            $out << "[:verilog:reduceTabs 1]//---------------"
-
-            $results @> foreach {
-                #puts "Found Logic elements"
-                $out << [[lindex $it 0] verilog:reduceTabs][lindex $it 1]
-            }
+            
 
             $out << ""
             $out << ""
@@ -231,12 +234,13 @@ namespace eval odfi::h2dl::verilog {
 
         #puts "Writing Out Register [:name get]"
         #puts "Current parent is  [$parent info class]"
-        if {![$parent isClass ::odfi::h2dl::Structural]} {
-            return "[:name get]"
-        } else {
+        if {[$parent isClass ::odfi::h2dl::Structural]} {
             set size [expr [:width get] > 1 ? "{ \[[expr [:width get]-1]:0\]}" : "{}"]
             return "reg $size [:name get];"
+        } else {
+            return "[:name get]"
         }
+      
         
 
         #return "[:verilog:reduceTabs]register [:name get]"
@@ -244,23 +248,50 @@ namespace eval odfi::h2dl::verilog {
 
     defineReduce ::odfi::h2dl::Wire {
         
+   
+        
         if {[:isClass ::odfi::h2dl::IO]} {
             return [next]
             
         }
         
+        set res ""
         #puts "Writing Out Wire [:name get]"
         #puts "Current parent is  [$parent info class]"
-        if {[$parent isClass ::odfi::h2dl::ast::ASTNode]} {
-            return "[:name get]"
+        if {[$parent isClass ::odfi::h2dl::ast::ASTNode] || [$parent isClass ::odfi::h2dl::Assign]} {
+            set res "[:name get]"
         } else {
             set size [expr [:width get] > 1 ? "{ \[[expr [:width get]-1]:0\]}" : "{}"]
-            set subResults [$results @> map { return [[lindex $it 0] verilog:reduceTabs -1][lindex $it 1]} @> mkString {"\n" "\n" "\n" } ]
-            return "wire $size [:name get];$subResults"
+            #set subResults [$results @> map { return [[lindex $it 0] verilog:reduceTabs -1][lindex $it 1]} @> mkString {"\n" "\n" "\n" } ]
+            
+            set type wire
+            if {[$parent hasAttribute ::odfi::h2dl testbench]} {
+                set type logic
+            }
+            set res "$type $size [:name get]; // AAGAGA"
         }
+        
+        
+        ## If there is a result for an assign, pull it up
+        set assignRes [$results @> findOption {[lindex $it 0] isClass ::odfi::h2dl::Assign}]
+        if {[$assignRes isDefined]} {
+            #puts "FOUND ASSIGN FOR WIRE"
+            #set res [::odfi::flist::MutableList new]
+            
+            set res [list [list [current object] $res] [$assignRes get]]
+           # puts "now res ist: $res"
+        }
+        
+        #puts "return res: $res"
+        return $res 
         
 
         #return "[:verilog:reduceTabs]register [:name get]"
+    }
+
+    defineReduce ::odfi::h2dl::Connection {
+    
+        return [$results @> map {lindex $it 1} @> mkString]
     }
 
     defineReduce ::odfi::h2dl::IO {
@@ -272,32 +303,94 @@ namespace eval odfi::h2dl::verilog {
             ## Connection 
             set connectionString  ".[:name get]()"
 
-            ## Child Connection 
-            set cconnection [:shade odfi::h2dl::Connection child 0]
-            if {$cconnection!=""} {
-                #puts "IO [:name get] has a child connection to [$cconnection firstChild] of type  [[$cconnection firstChild] info class], name is [[$cconnection firstChild] name get]"
-                set connectionString  ".[:name get]([[$cconnection firstChild] name get])"
-            } else {
-                 ## Parent Connection ?
-                set pconnection [:shade odfi::h2dl::Connection parent]
-                if {$pconnection!=""} {
-                    set connectionString  ".[:name get]([[$pconnection parent] name get])"
-                } else {
-                    #puts "IO [:name get] had no child or parent connection"
-                    #puts "--- parents count are: [[:getParentsRaw] size]"
-                    #[:getParentsRaw] foreach {
-                    #    puts "--- Parent type: [$it info class]"
-                    #}
-                    
+            
+            ## Connection to/from
+            ############
+            set connection [:shade odfi::h2dl::Connection child 0]
+            set connectionTo   true
+            set connectionFrom false
+            if {$connection==""} {
+                set connection [:shade odfi::h2dl::Connection parent]
+                if {$connection!=""} {
+                    set connectionTo   false
+                    set connectionFrom true
                 }
+                
+            }
+            
+            #puts "Writing Out Connection IO [:name get] [$parent info class] ($parent) <- $connection"
+            
+    
+            if {$connection==""} {
+                return ".[:name get]()"
+            }
+            
+            ## Connection Name can be a string or an object
+            ########
+            set connectionName [$connection name get]
+            set connectionSignalName ""
+            set connectionString ".[:name get]()"
+            
+            ## If not an object, use string
+            if {[::odfi::common::isObject $connectionName]} {
+            
+                ## If connection is a signal, a bit or a range
+                if {[$connectionName isClass ::odfi::h2dl::Bit]} {
+                    
+                    set connectionSignalName  [[$connectionName parent] name get]
+                    set connectionSignalSize  [[$connectionName parent] width get]
+                    set connectionString     ".[:name get]([[$connectionName parent] name get]\[[$connectionName index get]\])"
+                    
+                } elseif {[$connectionName isClass ::odfi::h2dl::Signal]} {
+                    
+                    set connectionSignalName $connectionName
+                    set connectionSignalSize  [$connectionName width get]
+                    set connectionString     ".[:name get]([$connectionName name get])"  
+                              
+                } elseif {[$connectionName isClass ::odfi::h2dl::ast::ASTRangeSelect]} {
+                
+                    set rangeTarget [$connectionName firstChild]
+                    set range       [$connectionName lastChild]
+                    set first       [[$range firstChild] constant get]
+                    set last        [[$range lastChild]  constant get]
+                    
+                    # [$results @> map {lindex $it 1} @> mkString]
+                    set connectionString  ".[:name get]([$rangeTarget name get]\[${last}:${first}\])"  
+                    set connectionSignalName  [$rangeTarget name get]
+                    set connectionSignalSize  [$rangeTarget  width get]                            
+                }
+            
+            } else {
+            
+                set connectionSignalName $connectionName
+                set connectionSignalSize 1
+                set connectionString ".[:name get]($connectionName)"
+                if {$connectionName==[:name get]} {
+                    set connectionSignalSize [:width get]
+                }
+                
+            }
+            
+            ## Make sure the parent module has a signal for the connection
+            if {$connectionSignalName!=""} {
+                #set module [[:parent] getParentModule]
+               # set signal [$module shade ::odfi::h2dl::Signal findChildByProperty name $connectionSignalName]
+                #if {$signal==""} {
+                     #puts "Adding Signal  $connectionSignalName for connection in module [$module name get]"
+                     #$module wire $connectionSignalName {
+                     #   :width set  $connectionSignalSize
+                    #}
+                #}
             }
 
-           
-
-            #puts "Foudn Connections on IO instance: $pconnection  $cconnection "
-
-            return $connectionString 
+            ## Return connection string
+            return $connectionString
+            
+            
+            
         } elseif {[$parent isClass ::odfi::h2dl::Module]} {
+
+           set res ""
 
             ## Description
             set desc [:description get]
@@ -314,9 +407,9 @@ namespace eval odfi::h2dl::verilog {
             }
 
             ## Definition
-            if {[:isClass ::odfi::h2dl::Input]} {
-                return "$desc    input [:type get]$size [:name get]"
-            } elseif {[:isClass ::odfi::h2dl::Output]} {
+            if {[:isInput]} {
+                set res "$desc    input [:type get]$size [:name get]"
+            } elseif {[:isOutput]} {
 
                 ## Make sure type is reg if an assignment is made
                 ## Assignment means the node has a Non blocking parent and is on the left
@@ -329,11 +422,25 @@ namespace eval odfi::h2dl::verilog {
                 #    set type "reg"
                 #}
 
-                return "$desc    output ${type}$size [:name get]"
+                set res "$desc    output ${type}$size [:name get]"
 
-            } elseif {[:isClass ::odfi::h2dl::Inout]} {
-                return "$desc    inout [:type get]$size [:name get]"
+            } elseif {[:isInout]} {
+                set res "$desc    inout [:type get]$size [:name get]"
             }
+            
+            
+            ## If there is a result for an assign, pull it up
+            set assignRes [$results @> findOption {[lindex $it 0] isClass ::odfi::h2dl::Assign}]
+            if {[$assignRes isDefined]} {
+                #puts "FOUND ASSIGN FOR IO"
+                #set res [::odfi::flist::MutableList new]
+                
+                set res [list [list [current object] $res] [$assignRes get]]
+                #puts "now res ist: $res"
+            }
+            
+            return $res
+            
         } else {
             return "[:name get]"
         }
@@ -414,10 +521,12 @@ namespace eval odfi::h2dl::verilog {
         #return "[$results @> map { return [lindex $it 1]} @> mkString {-}]"
         
         ## Right part may be a concat without the
+        puts "NB with right:  [$results at 1]"
         set right "[lindex [$results at 1] 1]"
-        if {[string first "," $right]!=-1 && [string first "\}" $right]==-1} {
-            set right "{$right}"
-        }
+        set right [string map {( \{ ) \}} $right]
+        #if {[string first "," $right]!=-1 && [string first "\}" $right]==-1} {
+        #    set right "{$right}"
+        #}
         
         return "[lindex [$results at 0] 1] <= $right;"
     }
@@ -426,7 +535,10 @@ namespace eval odfi::h2dl::verilog {
 
         #puts "NB results $results [[lindex $results 0] info class]"
         #return "[$results @> map { return [lindex $it 1]} @> mkString {-}]"
-        #puts "******* ASSIGN [$results size]"
+        #puts "******* ASSIGN on  [[:shade odfi::h2dl::Signal parent] name get] [current object] [$results size]"
+        #if {[$results size]==1} {
+        #    puts "Output: [$results at 0] -> [$results @> map { return [lindex $it 1]} @> mkString ]"
+        #}
         return "assign [[:shade odfi::h2dl::Signal parent] name get] = [$results @> map { return [lindex $it 1]} @> mkString ];"
     }
 
@@ -456,13 +568,19 @@ namespace eval odfi::h2dl::verilog {
         #puts "CONSTANT OUT"
         return "[:constant get]"
     }
+    
+   
 
     defineReduce ::odfi::h2dl::ast::ASTRangeSelect {
-        #puts "CONSTANT OUT"
+       
         set rangeDef [:lastChild]
+        
+        #puts "Range Out for [[:firstChild] name get] -> [$rangeDef info class] , parent is: [$parent info class]"
+        
         if {[$rangeDef isClass ::odfi::h2dl::ast::ASTConstant]} {
             return "[[:firstChild] name get]\[[$rangeDef constant get]\]"
         } elseif {[$rangeDef isClass ::odfi::h2dl::ast::ASTRange]} {
+           # puts "-> Range: [$rangeDef firstChild] -- [$rangeDef lastChild]"
             return "[[:firstChild] name get]\[[[$rangeDef firstChild] constant get]:[[$rangeDef lastChild] constant get]\]"
         }
         
@@ -470,12 +588,12 @@ namespace eval odfi::h2dl::verilog {
 
     defineReduce ::odfi::h2dl::ast::ASTConcat {
     
-        #puts "ASTConcat OUT [$results size]"
+        puts "ASTConcat OUT [$results size]"
         set allRes [lindex [$results at 0] 1]
         
         set finalRes [$results @> map {
             return [lindex $it 1]
-        } @> mkString [list "{" "," "}"]]
+        } @> mkString [list "(" "," ")"]]
         return $finalRes
         
         #set left [lindex [$results at 0] 1]
@@ -521,6 +639,18 @@ namespace eval odfi::h2dl::verilog {
 
         return "$left + $right"
         
+    }
+    
+    defineReduce ::odfi::h2dl::ast::ASTGreaterThan {
+   
+            #puts "SL out"
+   
+       set left [lindex [$results at 0] 1]
+       set leftNode [lindex [$results at 0] 0]
+       set right [expr {[$results size]>1} ? {[lindex [$results at 1] 1]} : "{}"]
+   
+       return "$left >= $right"
+       
     }
 
     defineReduce ::odfi::h2dl::ast::ASTAnd {
@@ -731,11 +861,21 @@ namespace eval odfi::h2dl::verilog {
 
        
 
-        :public method produce {{outputFolder "."}} {
+        :public method generate {{outputFolder "."}} {
+
 
 
             ## Check output folder 
             ##############
+            
+            ## If Relative, set to caller file by default, this is more intuitive than interpreter start location
+            if {[odfi::files::isRelative $outputFolder]} {
+            
+                ## Get Caller Location
+                lassign [uplevel odfi::common::findFileLocation] callerFile callerLine
+                set outputFolder [file dirname $callerFile]/$outputFolder       
+            }
+            
             file mkdir $outputFolder
            
             
@@ -771,30 +911,32 @@ namespace eval odfi::h2dl::verilog {
                 $fFileStream streamToFile $outputFolder/[$module name get].f
 
                 ## Find All the NamedValue for local params, and put them in the top module 
-                :walkDepthFirstPreorder {
-                    {namedValue parent} => 
+                #:walkDepthFirstPreorder {
+                #    {namedValue parent} => 
 
-                        if {[$namedValue isClass odfi::h2dl::NamedValue]} {
-                            $namedValue detachFrom $parent 
-                            $namedValue setFirstParent $module 
-                            return false 
-                        } elseif {[$namedValue isClass odfi::h2dl::Module]} {
-                            return false
-                        }
+                 #       if {[$namedValue isClass odfi::h2dl::NamedValue]} {
+                 #           $namedValue detachFrom $parent 
+                 #           $namedValue setFirstParent $module 
+                  #          return false 
+                  #      } elseif {[$namedValue isClass odfi::h2dl::Module]} {
+                  #          return false
+                  #      }
                         
                 
-                    return true
-                }
+                  #  return true
+                #}
 
                 ## Find All Assigns on IOS and add them to top module 
-                :shade odfi::h2dl::IO eachChild {
+                #:shade odfi::h2dl::IO eachChild {
 
-                    $it shade odfi::h2dl::Assign eachChild {
-                        $module addChild $it
-                    }
+                    #$it shade odfi::h2dl::Assign eachChild {
+                       # {assign i} => 
+                        #    $assign detach
+                        #    $module addChild $assign
+                   # }
 
             
-                }
+               # }
 
 
             }
@@ -806,81 +948,122 @@ namespace eval odfi::h2dl::verilog {
 
                 ## Produce Results 
                 #########################
-                ::set __r [$node verilog:reduce $parent $results]
+                
 
                 ## Write to file if Module Master, and remove from results to avoid duplications
                 if {[$node isClass odfi::h2dl::Module] && ![$node isClass odfi::h2dl::Instance] && ![$node hasAttribute ::odfi::h2dl blackbox]} {
 
-                    #puts "Module was created from file : [$node file get]"
-                    #puts "Module -> To File ${outputFolder}/[$node name get].v" 
-                    
-                    ##puts "Module Res: $__r"
-                    
-                    ## Write File 
-                    ################
-                    
-                    ## First Check existing file and its timestamp
-                    set targetFile ${outputFolder}/[$node name get].v
+                   puts "visiting module $node [$node name get] , with parent: $parent -> [$results size]"
+                   if {$parent!=""} {
+                    #puts "--> parent: [$parent name get] ([$parent info class])"
+                   }
                    
-                    if {$existingTimeStamp>0 && [file exists $targetFile]} {
+                   
+                    
+                    ## If module was generated somewhere else, use that somewhere
+                    ########
+                    if {[$node hasAttribute ::odfi::h2dl::verilog generatedFile]} {
                         
-                        set lastModified [file mtime $targetFile ]
-                     
-                        ## If modified after last generation, make backup and warning
-                        if {$lastModified>$existingTimeStamp} {
-                            odfi::log::warn "File $targetFile was generated and modified after generation, a backup has been saved"
-                            file copy -force $targetFile ${targetFile}.genbackup
-                        }
-                    }
-                    ## Normal write
-                    odfi::files::writeToFile ${outputFolder}/[$node name get].v $__r 
-
-                    ## Add to f
-                    $fFileStream << [file normalize ${outputFolder}/[$node name get].v]
-
-                    ## Add Companion sources 
-                    ## - Copy to output 
-                    ## - Add to .f for verilog/vhdl files
-                    if {[$node hasAttribute ::odfi::verilog companions]} {
-                        foreach companion [$node getAttribute ::odfi::verilog companions] {
+                        #$fFileStream << [$node getAttribute ::odfi::h2dl::verilog generatedFile]
+                        ::set __r ""
                         
-                            if {![file exists $companion]} {
-                                error "Cannot Copy Companion source file $companion of [$node name get] because the file does not exist"
-                            } else {
+                    } else {
+                    
+                        puts "--> generate"
+                        ## Write File 
+                        ################
+                        
+                        ## First Check existing file and its timestamp
+                        set targetFile ${outputFolder}/[$node name get].v
+                       
+                        if {$existingTimeStamp>0 && [file exists $targetFile]} {
                             
-                                ## Before copying check timestamps
-                                ## First Check existing file and its timestamp
-                                set targetFile ${outputFolder}/[file tail $companion]
-                                set allowCopy true
+                            set lastModified [file mtime $targetFile ]
+                         
+                            ## If modified after last generation, make backup and warning
+                            if {$lastModified>$existingTimeStamp} {
+                                odfi::log::warn "File $targetFile was generated and modified after generation, a backup has been saved"
+                                file copy -force $targetFile ${targetFile}.genbackup
+                            }
+                        }
+                        
+                        ## Produce
+                        puts "Calling regduce [$results size]"
+                        ::set __r [$node verilog:reduce $parent $results]
+                        
+                        #puts "Module was created from file : [$node file get]"
+                        #puts "Module -> To File ${outputFolder}/[$node name get].v" 
+                        
+                        ##puts "Module Res: $__r"
+                        
+                        ## Normal write
+                        odfi::files::writeToFile ${outputFolder}/[$node name get].v $__r 
+                        $node attribute ::odfi::h2dl::verilog generatedFile ${outputFolder}/[$node name get].v
+    
+                        ## Add to f
+                        $fFileStream << [file normalize ${outputFolder}/[$node name get].v]
+    
+                        ## Add Companion sources 
+                        ## - Copy to output 
+                        ## - Add to .f for verilog/vhdl files
+                        if {[$node hasAttribute ::odfi::verilog companions]} {
+                            foreach companion [$node getAttribute ::odfi::verilog companions] {
+                            
+                                if {![file exists $companion]} {
+                                    error "Cannot Copy Companion source file $companion of [$node name get] because the file does not exist"
+                                } else {
                                 
-                                if {$existingTimeStamp>0 && [file exists $targetFile]} {
+                                    ## Before copying check timestamps
+                                    ## First Check existing file and its timestamp
+                                    set targetFile ${outputFolder}/[file tail $companion]
+                                    set allowCopy true
                                     
-                                    set lastModified [file mtime $targetFile ]
-                                 
-                                    ## If modified after last generation, make backup and warning
-                                    if {$lastModified>$existingTimeStamp} {
-                                        odfi::log::warn "File $targetFile was copied as companion and modified after copy, nothing will be done for this file but a copy was saved"
-                                        file copy -force $targetFile ${targetFile}.genbackup
-                                        set allowCopy false
+                                    if {$existingTimeStamp>0 && [file exists $targetFile]} {
+                                        
+                                        set lastModified [file mtime $targetFile ]
+                                     
+                                        ## If modified after last generation, make backup and warning
+                                        if {$lastModified>$existingTimeStamp} {
+                                            odfi::log::warn "File $targetFile was copied as companion and modified after copy, nothing will be done for this file but a copy was saved"
+                                            file copy -force $targetFile ${targetFile}.genbackup
+                                            set allowCopy false
+                                        }
                                     }
-                                }
-                                
-                                ## Normal copy then
-                                if {$allowCopy} {
-                                    file copy -force $companion $targetFile
-                                }
-                                
-
-                                ## Add to .f if necessary
-                                if {[string match "*.v" $companion] || [string match "*.vhdl" $companion] || [string match "*.vhd" $companion] || [string match "*.sv" $companion]} {
-                                    $fFileStream << [file normalize ${outputFolder}/[file tail $companion]]
+                                    
+                                    ## Normal copy then
+                                    if {$allowCopy} {
+                                        file copy -force $companion $targetFile
+                                    }
+                                    
+    
+                                    ## Add to .f if necessary
+                                    if {[string match "*.v" $companion] || [string match "*.vhdl" $companion] || [string match "*.vhd" $companion] || [string match "*.sv" $companion]} {
+                                        $fFileStream << [file normalize ${outputFolder}/[file tail $companion]]
+                                    }
                                 }
                             }
                         }
+    
+                        ::set __r ""
+                    
                     }
-
-                    ::set __r ""
+                    
+                
+                ## EOF Module    
+                } elseif {[$node isClass odfi::h2dl::Module] && [$node isClass odfi::h2dl::Instance]} {
+                
+                    $fFileStream << [[$node master get] getAttribute ::odfi::h2dl::verilog generatedFile]
+                    
+                    ## Produce results for other cases
+                    ::set __r [$node verilog:reduce $parent $results]
+                    
+                ## EOF Instance
+                } else {
+                    
+                    ## Produce results for other cases
+                    ::set __r [$node verilog:reduce $parent $results]
                 }
+                
                 return $__r
                
 
@@ -889,6 +1072,7 @@ namespace eval odfi::h2dl::verilog {
 
             ## Write F File out 
             ##########################
+            
             $fFileStream close
             #odfi::files::writeToFile ${outputFolder}/netlist.f [join $filesList \n]
 
@@ -949,6 +1133,8 @@ namespace eval odfi::h2dl::verilog {
 
             if {[file exists $inFile]} {
                 set fileContent [odfi::files::readFileContent $inFile]
+            } else {
+                error "Cannot merge non existent file: $inFile"
             }
 
             ## Remove Header Definition and take content as imported 

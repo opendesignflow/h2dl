@@ -1,13 +1,13 @@
 package edu.kit.ipe.adl.h2dl
 /*
-import edu.kit.ipe.adl.indesign.core.brain.Brain
-import edu.kit.ipe.adl.indesign.core.harvest.Harvest
-import edu.kit.ipe.adl.indesign.tcl.module.TCLModule
-import edu.kit.ipe.adl.indesign.tcl.TclInterpreter
-import edu.kit.ipe.adl.indesign.tcl.module.TCLPackageHarvester
-import edu.kit.ipe.adl.indesign.tcl.module.TCLPackageFolder
-import edu.kit.ipe.adl.indesign.module.maven.MavenProjectHarvester
-import edu.kit.ipe.adl.indesign.module.maven.MavenModule
+import org.odfi.tcl.indesign.core.brain.Brain
+import org.odfi.tcl.indesign.core.harvest.Harvest
+import org.odfi.tcl.indesign.tcl.module.TCLModule
+import org.odfi.tcl.indesign.tcl.TclInterpreter
+import org.odfi.tcl.indesign.tcl.module.TCLPackageHarvester
+import org.odfi.tcl.indesign.tcl.module.TCLPackageFolder
+import org.odfi.tcl.indesign.module.maven.MavenProjectHarvester
+import org.odfi.tcl.indesign.module.maven.MavenModule
 
 object TryParseH2DL extends App {
 

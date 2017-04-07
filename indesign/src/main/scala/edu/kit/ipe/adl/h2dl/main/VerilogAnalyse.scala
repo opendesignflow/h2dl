@@ -7,38 +7,37 @@ import org.bridj.BridJ
 import com.idyria.osi.wsb.webapp.localweb.LocalWebEngine
 import com.idyria.osi.wsb.webapp.resources.ResourcesIntermediary
 
-import edu.kit.ipe.adl.h2dl.DesignGroupHarvester
-import edu.kit.ipe.adl.h2dl.DesignGroupResource
 import edu.kit.ipe.adl.h2dl.H2DLModule
-import edu.kit.ipe.adl.h2dl.verilog.VerilogFIleHarvester
+import edu.kit.ipe.adl.h2dl.verilog.VerilogFileHarvester
 import edu.kit.ipe.adl.h2dl.verilog.VerilogFile
 import edu.kit.ipe.adl.h2dl.vhdl.VHDLFileHarvester
-import edu.kit.ipe.adl.indesign.core.brain.Brain
-import edu.kit.ipe.adl.indesign.core.harvest.Harvest
-import edu.kit.ipe.adl.indesign.core.harvest.Harvester
-import edu.kit.ipe.adl.indesign.core.harvest.fs.FileSystemHarvester
-import edu.kit.ipe.adl.indesign.core.harvest.fs.HarvestedFile
-import edu.kit.ipe.adl.indesign.core.heart.Heart
-import edu.kit.ipe.adl.indesign.core.heart.HeartTask
-import edu.kit.ipe.adl.indesign.core.module.ui.www.IndesignWWWUIModule
-import edu.kit.ipe.adl.indesign.tcl.module.TCLModule
-import edu.kit.ipe.adl.h2dl.ui.H2DLWelcomeView
+import org.odfi.indesign.core.brain.Brain
+import org.odfi.indesign.core.harvest.Harvest
+import org.odfi.indesign.core.harvest.Harvester
+import org.odfi.indesign.core.harvest.fs.FileSystemHarvester
+import org.odfi.indesign.core.harvest.fs.HarvestedFile
+import org.odfi.indesign.core.heart.Heart
+import org.odfi.indesign.core.heart.HeartTask
+import org.odfi.tcl.module.TCLModule
 import com.idyria.osi.tea.logging.TLog
 import com.idyria.osi.vui.core.view.AViewCompiler
 import com.idyria.osi.tea.files.FileWatcherAdvanced
 import com.idyria.osi.wsb.webapp.localweb.SingleViewIntermediary
 import com.idyria.osi.wsb.webapp.http.connector.websocket.WebsocketInterface
 import edu.kit.ipe.adl.h2dl.techfiles.lib.LibFile
-import edu.kit.ipe.adl.indesign.core.config.Config
-import edu.kit.ipe.adl.indesign.core.config.ooxoo.OOXOOFSConfigImplementation
-import edu.kit.ipe.adl.indesign.tcl.integration.TclintLibrary
-import edu.kit.ipe.adl.indesign.tcl.TclInterpreter
+import org.odfi.indesign.core.config.Config
+import org.odfi.indesign.core.config.ooxoo.OOXOOFSConfigImplementation
+import org.odfi.tcl.integration.TclintLibrary
+import org.odfi.tcl.TclInterpreter
 
+
+
+/*
 object VerilogAnalyse extends App {
 
   // TLog.setLevel(classOf[Harvester],TLog.Level.FULL)
   
- 
+  
   
   
   // Setup Modules
@@ -105,7 +104,7 @@ object VerilogAnalyse extends App {
   }
   basePath.mkdirs
 
-  val fsh = new FileSystemHarvester
+  val fsh = FileSystemHarvester
   fsh.addPath(basePath.toPath())
   var dgh = fsh.addChildHarvester(DesignGroupHarvester())
 
@@ -203,4 +202,4 @@ object VerilogAnalyse extends App {
 
   })
 
-}
+}*/

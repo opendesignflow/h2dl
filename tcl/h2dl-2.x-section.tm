@@ -23,7 +23,7 @@ namespace eval odfi::h2dl::section {
 
 
         +type Section : ::odfi::h2dl::H2DLObject  {
-
+            +var name ""
            
         }
 
@@ -40,8 +40,13 @@ namespace eval odfi::h2dl::section {
         }
 
         ## A Logic Section 
-        :logicSection : Section name {
+        :logicSection : Section name  {
+            
             +mixin ::odfi::h2dl::Logic
+            
+            # Important to have declared signal be declared fully
+            +mixin ::odfi::h2dl::Structural
+            
             +exportToPublic
         }
 

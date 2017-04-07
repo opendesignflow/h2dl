@@ -1,0 +1,25 @@
+
+
+.code-and-outline {
+	
+}
+
+.code-and-outline .code {
+    width:50%;
+    display:  inline-block;
+    /*float:left;*/
+}
+
+.code-and-outline .outline {
+    width:48%;
+    min-height: 250px;
+    /*display: inline-block;*/
+   /* display: inline;*/
+    float: right;
+}
+
+.code-and-outline .outline .h2dl-hdl-diagram  svg {
+    /*width:100%;*/
+    /*width: auto;
+    height: 100%;*/
+}

@@ -15,6 +15,9 @@ package ifneeded odfi::h2dl::verification      2.0.0 [list source [file join $di
 package ifneeded odfi::h2dl::view              2.0.0 [list source [file join $dir  h2dl-2.x-view.tm]]
 
 
+package ifneeded odfi::h2dl::sdc              2.0.0 [list source [file join $dir  h2dl-2.x-sdc.tm]]
+
+
 package ifneeded odfi::h2dl::section              2.0.0 [list source [file join $dir  h2dl-2.x-section.tm]]
 
 package ifneeded odfi::h2dl::sim1              2.0.0 [list source [file join $dir  h2dl-2.x-sim1.tm]] 

@@ -16,8 +16,11 @@
 package provide odfi::h2dl 2.0.0
 
 package require odfi::language 1.0.0
-package require odfi::h2dl::ast  2.0.0
+
 package require odfi::attributes 2.0.0
+
+package require odfi::log 1.0.0
+
 
 namespace eval odfi::h2dl {
     
@@ -78,13 +81,14 @@ namespace eval odfi::h2dl {
             +var file ""
             +var line ""
             +mixin ::odfi::attributes::AttributesContainer
+            +mixin ::odfi::log::Logger -prefix log
 
             +method init args {
                 next 
-
-                set location  [odfi::common::findUserCodeLocation]
-                set :file [lindex $location 0]
-                set :line [lindex $location 1]
+                :log:setPrefix [:info class]
+                #set location  [odfi::common::findUserCodeLocation]
+                #set :file [lindex $location 0]
+                #set :line [lindex $location 1]
 
             }
 
@@ -92,6 +96,12 @@ namespace eval odfi::h2dl {
             ##############
             :comment value {
 
+            }
+            
+            ## parent Searching
+            ############
+            +method getParentModule args {
+                return [:findParentInPrimaryLine {$it isClass ::odfi::h2dl::Module}]
             }
         }
 
@@ -128,7 +138,8 @@ namespace eval odfi::h2dl {
             ## IF // Else // Else If 
             :if : ::odfi::h2dl::Logic condition {
                 +builder {
-                    set :condition [::odfi::h2dl::ast::buildAST [subst ${:condition}]]
+                    #puts "buildlocatino [::odfi::common::findFileLocation]"
+                    set :condition [::odfi::h2dl::ast::buildAST [uplevel 3 [list subst ${:condition}]]]
                     :addChild ${:condition} 
                 }
             }
@@ -198,9 +209,10 @@ namespace eval odfi::h2dl {
                 $newNode object mixins add Instance
                 catch {$newNode mixins delete Master}
 
-                ## Set master 
+                ## Set master in variable and as child of Instance
                 $newNode master set [current object]
-                $newNode addChild [current object]
+                [current object] addParent $newNode
+                #$newNode addChild [current object]
                 #$newNode addParent [current object]
                     
                 #puts "Creating Instance of [:info class], $newNode"
@@ -243,16 +255,35 @@ namespace eval odfi::h2dl {
             +var  width  1
             +var  offset 0
             +var  type   digital
+            
+            ## Sub Elements: Bit
+            ###############
+            :bit : H2DLObject index  {
+                +unique index
+            }
+            
+            
+            ## Size Utility
+            #########
             +method size value {
                 #puts "Defining size as $args"
                 :width set $value
             }
 
-            :bit index {
-                +unique index
+            ## increase the width of the signal by one per default, or more if specified
+            +method widen {{count 1}} {
+                incr :width $count
+               
             }
+            
+            ## decrease the width of the signal by one per default, or more if specified
+            +method schrink {{count 1}} {
+                incr :width -$count
+            }
+            
 
             ## Bit Mapping
+            #########
             :bitMap expression name {
                 +var wire ""
                 +builder {
@@ -276,15 +307,15 @@ namespace eval odfi::h2dl {
 
                     ## Create Assign construct, and move it to parent, to ease output generation
                     set assignNode [$mappedWire assign "[:parent] @ ${:expression}"]
-                    $assignNode setFirstParent [$mappedWire parent]
-                    $assignNode addParent $mappedWire
+                    #$assignNode setFirstParent [$mappedWire parent]
+                    #$assignNode addParent $mappedWire
 
                     set :wire $mappedWire     
                 }
             }
 
             ## Assignment 
-            :assign expression {
+            :assign : H2DLObject expression {
                  +builder {
                      set :expression [::odfi::h2dl::ast::buildAST ${:expression}]
                      :addChild ${:expression}
@@ -312,6 +343,48 @@ namespace eval odfi::h2dl {
                     :apply $cl
                 }
                 
+            }
+            
+            +method toInout {{cl ""}} {
+                :object mixins add ::odfi::h2dl::Inout
+                set :type "wire"
+                if {$cl!=""} {
+                    :apply $cl
+                }
+                
+            }
+            
+            +method isInput args {
+              
+                return [expr {[:classMatchExpression ::odfi::h2dl::Input !::odfi::h2dl::Output !::odfi::h2dl::Inout] || [:hasMixin ::odfi::h2dl::Input]} ]
+            }
+            +method isOutput args {
+               
+                
+                return [expr {[:classMatchExpression  ::odfi::h2dl::Output !::odfi::h2dl::Input !::odfi::h2dl::Inout] || [:hasMixin ::odfi::h2dl::Output]} ]
+                
+            }
+            +method isInout args {
+            
+                
+                return [expr {[:classMatchExpression ::odfi::h2dl::Inout !::odfi::h2dl::Output !::odfi::h2dl::Input] || [:hasMixin ::odfi::h2dl::Inout]} ]
+            }
+            
+            +method matchDirection target {
+            
+                #puts "Matching directions of [:info class] to [$target info class]"
+                catch {:object mixins delete ::odfi::h2dl::Input}
+                catch {:object mixins delete ::odfi::h2dl::Output}
+                catch {:object mixins delete ::odfi::h2dl::Inout}
+                if {[$target isClass ::odfi::h2dl::Input]} {
+                    :object mixins add ::odfi::h2dl::Input
+                } elseif {[$target isClass ::odfi::h2dl::Output]} {
+                   # puts "--> CHanging to output"
+                    :object mixins add ::odfi::h2dl::Output
+                } elseif {[$target isClass ::odfi::h2dl::Inout]} {
+                    :object mixins add ::odfi::h2dl::Inout
+                }
+                #puts "--> now   [:info class]"
             }
         }
 
@@ -371,20 +444,24 @@ namespace eval odfi::h2dl {
             +var connect ""
 
 
-
+           
+            
             +method register args {
                 set :type "reg"
             }
             +method electrical args {
                 set :type "electrical"
             }
+            +method power value {
+                set :type "power"    
+            }
 
             ## Connection 
             :connection : Named signal {
                 +builder {
 
-                    #puts "Buildign IO connections with ${:signal} "
-
+                    #puts "Buildign IO connections of [:name get] with ${:signal} "
+                    set baseSignal [:parent]
 
                     ## Options:
                     ##   - Target signal already has a connection, then take the name 
@@ -400,36 +477,124 @@ namespace eval odfi::h2dl {
                         set n ${:signal}
                         set :signal [::odfi::h2dl::Signal new]
                         ${:signal} name set $n 
-                        ${:signal} attribute odfi::h2dl::dummy true 
+                        ${:signal} attribute ::odfi::h2dl::dummy true 
                     }
-
-                    ## Set name 
-                    #puts "Signal is: ${:signal} [${:signal} info class] "
-                    if {[odfi::common::isClass ${:signal} ::odfi::h2dl::IO] || [${:signal} isClass ::odfi::h2dl::Signal]} {
-                        set baseSignal [:parent]
-
-                        #puts "using signal "
-                        ## If parent from signal and base signal is same, just take the name of the signal
-                        ## Otherwise, append the name of the target signal's parent
-                        if {[${:signal} parent]!="" && ([[$baseSignal parent] getPrimaryTreeDepth] == [[${:signal} parent] getPrimaryTreeDepth])} {
+                    
+                    ## Get Actual Connection
+                    #########
+                    set actual [:shade ::odfi::h2dl::Connection firstChild]
+                    if {$actual!=""} {
+                        
+                        set ourWidth [$baseSignal width get]
+                        
+                        puts "Adding connection to actual"
+                        set actualConnectionTarget [$actual firstChild]
+                        if {[$actualConnectionTarget isClass ::odfi::h2dl::Signal]} {
                             
-                            set :name [[${:signal} parent] name get]_[$signal name get]
-                        } else {
-                            set :name [${:signal} name get]
-                            #set :name [[${:signal} parent] name get]_[$signal name get]
-
+                            ## Make sure there are enough bits to connect
+                            set actualTargetWidth [$actualConnectionTarget width get]
+                            set remainingWidth [expr  $ourWidth - $actualTargetWidth]
+                            if {$remainingWidth<=0} {
+                                :log:warning "Cannot connect [$baseSignal name get] to ${:signal} name get, nothing left to connect"
+                                return
+                            }
                             
+                            ## Ok, then create a concat
+                            ##########
+                            puts "Creating range concat"
+                            ## First: take a range of target
+                            set targetRange [$actualConnectionTarget ast:range 0 [expr $remainingWidth -1]]
+                            set resultConcat [${:signal}  ast:concat $targetRange]
+                            set :name $resultConcat
+                            :clearChildren
+                            :addChild $resultConcat
                         }
-
-                        ## Add target signal 
-                        :addChild ${:signal}
-
+                        
+                    
                     } else {
-                        # Use as string 
-                        set :name ${:signal}
+                    
+                        ## Set name 
+                        #puts "Signal is: ${:signal} [${:signal} info class] "
+                        if {[odfi::common::isClass ${:signal} ::odfi::h2dl::IO] || [${:signal} isClass ::odfi::h2dl::Signal]} {
+                            
+    
+                           # puts "using signal "
+                           
+                            ## If parent from signal and base signal is same, just take the name of the signal
+                            ## Otherwise, append the name of the target signal's parent
+                            if {[${:signal} parent]!="" && ([[$baseSignal parent] getPrimaryTreeDepth] == [[${:signal} parent] getPrimaryTreeDepth])} {
+                                
+                                if {[[${:signal} parent] name get]==""} {
+                                    set :name [${:signal} name get]
+                                } else {
+                                    set :name [[${:signal} parent] name get]_[${:signal} name get]
+                                }
+                               
+                            } else {
+                                set :name [${:signal} name get]
+                                #set :name [[${:signal} parent] name get]_[$signal name get]
+    
+                                
+                            }
+    
+                            ## Resolve port direction
+                            if {[$baseSignal isClass ::odfi::h2dl::IO] && [${:signal} isClass ::odfi::h2dl::IO]} {
+                                ${:signal} matchDirection $baseSignal
+                                #if {[$baseSignal isOutput] && [${:signal} isInput]} {
+                                #    ${:signal} toOutput
+                                #}
+                            }
+    
+                            ## Add target signal 
+                            :addChild ${:signal}
+    
+                        } else {
+                            # Use as is
+                            set :name ${:signal}
+                        }
+                        ## Check Signal 
+                        #if {[[:parent]}
+                        
+                        ## Use name to make sure the containing module has a signal for connection
+                        ##############
+                        ::ignore {
+                            if {[::odfi::common::isObject [:name get]]} {
+                                
+                                set  target [:name get]
+                                if {[$target isClass ::odfi::h2dl::Bit]} {                 
+                                    set target [$target parent]  
+                                } elseif {[$target isClass ::odfi::h2dl::ast::ASTRangeSelect]} {            
+                                    set rangeTarget [$target firstChild]
+                                    set target      $rangeTarget         
+                                }
+                                
+                                ## Check there is a signal for target in parent
+                                set module [[[:parent] parent] getParentModule]
+                                set signal [$module shade ::odfi::h2dl::Signal findChildByProperty name [$target name get]]
+                                if {$signal==""} {
+                                     puts "Adding Signal  [$target name get] for connection in module [$module name get]"
+                                     $module wire [$target name get] {
+                                        :width set  [$target width get]
+                                    }
+                                }
+                            } else {
+                                ## Check there is a signal for target in parent
+                                set module [[[:parent] parent] getParentModule]
+                                set signal [$module shade ::odfi::h2dl::Signal findChildByProperty name  [:name get]]
+                                if {$signal==""} {
+                                     puts "Adding Signal  [:name get] for connection in module [$module name get]"
+                                     $module wire [:name get] {
+                                    }
+                                }
+                                
+                            }
+                        }
+                    
                     }
-                    ## Check Signal 
-                    #if {[[:parent]}
+
+                    
+                    
+                    
                 }
             }
             ## EOF Connection definition
@@ -446,6 +611,24 @@ namespace eval odfi::h2dl {
 
             ## Push IO 
             ##############
+            +method copyInto targetParent {
+                
+                ## Copy
+                set   resultSignal   [[current object] copy]
+                $resultSignal name set [[current object] name get]
+                
+                ## Copy Attributes 
+                :shade odfi::attributes::AttributeGroup eachChild {
+                    #puts "Copying attribute group [$it name get] for [$resultSignal name get]"
+                    $resultSignal addChild [$it copy]
+                    
+                }
+                
+                $targetParent addChild $resultSignal
+                
+                return $resultSignal
+                
+            }
             
             ## For now, just push up to parent
             +method pushUp {{prefix ""} {cl ""} } {
@@ -459,38 +642,83 @@ namespace eval odfi::h2dl {
                 
                 set resultSignal ""
                 if {$targetParent!=""} {
+                    
+                    ## Look if exsiting in parent
 
-
-                    ## Copy IO 
-                    set   resultSignal   [[current object] copy]
-                    $resultSignal name set [[current object] name get]
-
-                   # puts "Target new IO has name  1 [$resultSignal name get] [$resultSignal info class]"
-
-                    ## Rename 
-                    if {$prefix!=""} {
-                        $resultSignal name set ${prefix}_[$resultSignal name get]
+                    ## If Existing into parent, force our direction
+                    ## Target in parent has either the same name of an equivalent attribute
+                    set iosearchtime [time {
+                        set ios [$targetParent shade ::odfi::h2dl::IO children]
+                        
+                    }]
+                    set searchtime [time {
+                       
+                        set inParent [$ios findOption {
+                            if {([$it name get] == [$source name get]) || [$it attributeMatch ::odfi::h2dl name [$source name get]] } {
+                                return true
+                            } else {
+                                return false
+                            }
+                        }]
+                    }]
+                    #puts "search time: $iosearchtime -> $searchtime"
+                 
+                    #set inParent [$targetParent shade ::odfi::h2dl::IO findChildByProperty name [:name get]]
+                    
+                    if {[$inParent isDefined]} {
+                        
+                        set inParentIO [$inParent get]
+                        $inParentIO width set [:width get]
+                        $inParentIO matchDirection $source
+                        set  resultSignal $inParentIO
+                        
+                    } else {
+                    
+                        ## Copy IO 
+                        
+                        set   resultSignal   [[current object] copy]
+                        $resultSignal name set [[current object] name get]
+                       
+                        puts "Target new IO has name  1 [$resultSignal name get] [$resultSignal info class]"
+    
+                        ## Rename 
+                        if {$prefix!=""} {
+                            $resultSignal name set ${prefix}_[$resultSignal name get]
+                        }
+    
+                        
                     }
-
-                    ## Add to parent 
-                    $targetParent addChild $resultSignal
-
+                    
+                    
+                    ## Finalisation
                     #$targetParent apply {
                     #    set resultSignal [:input [$sourceParent name get]_[$source name get] $cl]
                     #}
 
-                    ## Make connection 
-                    #$resultSignal connection $source 
-                    $source connection $resultSignal
+                    
 
                     # puts "Target new IO has name 2 [$resultSignal name get]"
 
                     ## Copy Attributes 
                     :shade odfi::attributes::AttributeGroup eachChild {
+                        #puts "Copying attribute group [$it name get] for [$resultSignal name get]"
                         $resultSignal addChild [$it copy]
                     }
-
+                    
+                    ## Add to parent if necessary once object is ready
+                    if {![$inParent isDefined]} {
+                    
+                        $targetParent addChild $resultSignal
+                    }
+                    
+                    ## Make connection 
+                    #$resultSignal connection $source 
+                    $source connection $resultSignal
+                   
                 }
+                    
+
+            
             }
 
             ## For now, just push up to parent
@@ -551,9 +779,35 @@ namespace eval odfi::h2dl {
             ## Same After building if we are in a hierarchy
             ## !! Ignore this for now, because unsure it is a whished behavior
             +builder {
-                return 
-
+                #return 
+                
+                ## If an IO was added, add it to the instances
+                #########
+                :onChildAdded {
+                    set child [:lastChild]
+                    if {[$child isClass ::odfi::h2dl::IO]} {
+                        [:shade ::odfi::h2dl::Instance parents] foreach {
+                            :transferIOToInstance $it $child 
+                        }
+                    }
+                }
+                
+                ## IGNORE THis for now
                 set postBuildCl {
+                    
+                    lassign  [::odfi::common::findFileLocation] f l frame up           
+                    #puts "module build loc:  [::odfi::common::findFileLocation] , current level [info level]"
+                   
+                    ::set p [:noShade parent end]
+                    #puts "module parent: $p"
+                    if {$p!="" && [$p isClass ::odfi::h2dl::Module] && ![:isClass odfi::h2dl::Instance]} {
+                        ::set instance [:createInstance  [:name get]_I]
+                        #puts "created instance: $instance -> [$instance info lookup methods] "
+                        $p addChild $instance
+                        uplevel $up [list ::set  [:name get] $instance]
+                    }
+                
+                    return
                     set p [:noShade parent end]
                     
                     ## Only if added to a Module, and we are not a module ourselves already
@@ -565,11 +819,100 @@ namespace eval odfi::h2dl {
                             #[current object] detach
                             #$p removeChild [current object]
                             $p addChild $instance
+                            
+                            ## Update variable
                         }
                     }
                 }
-                :onParentAdded $postBuildCl
+                #:onParentAdded $postBuildCl
                 :onBuildDone $postBuildCl
+            }
+            
+            +method instanceFromFile f {
+            
+                set moduleName [lindex [split [file tail $f] .] 0]
+                puts "instance from: $moduleName"
+                
+                rsource $f 
+                
+                set inst [[::set $moduleName] getLatestInstance]
+                if {$inst==""} {
+                    set inst [[::set $moduleName]  createInstance ${moduleName}_I]
+                    
+                }
+                uplevel set $moduleName $inst
+                
+                
+            }
+            
+            ## get latests instnace: instances are parents of the module definition
+            +method getLatestInstance args {
+                return [:shade ::odfi::h2dl::Instance parent end]
+            }
+            
+            +method getAllInstances args {
+                return [:shade ::odfi::h2dl::Instance parents]
+            }
+            
+            ## Wiping module will detach it and also all the instances
+            +method wipe args {
+                
+                [:getAllInstances] foreach {
+                    $it detach
+                    $it clearChildren
+                }
+                :detach
+            
+            }
+
+            +method transferIOToInstance {instance io} {
+                
+                set nio [$io copy]
+                
+                $nio clearParents
+                $nio clearChildren
+
+                ## Rebuild 
+                $nio +build
+
+                ## Add to current node 
+                $instance addChild $nio
+
+                ## Set base IO as parent to find back original definition later
+                $nio addParent $io
+
+                ## Res Set IO as class variable again
+                $instance object variable -accessor public [$nio name get] $nio
+
+                ## Transfer Existing Connections 
+                ## Only the ones specified by attribute
+                ################
+                ::ignore {
+                    $io shade odfi::h2dl::Connection eachChild {
+                    {conn i} => 
+                        if {[$conn parent]==$io} {
+                            $conn detach
+                            $nio addChild $conn 
+                        } else {
+                            $conn clearChildren
+                            $conn addChild $nio
+                        }
+                    }
+                }
+                if {[$io hasAttribute ::odfi::h2dl connection]} {
+                   # $nio connection [$io getAttribute ::odfi::h2dl connection]
+                }
+                
+
+                ## Transfer Attributes 
+                ###############
+                $io shade odfi::attributes::AttributeGroup eachChild {
+                    {attrs i} => 
+                    #puts "Found Attributes Container on base IO"
+                    $nio addChild $attrs
+                } 
+                
+                next
             }
 
             +method doCreateInstance name {
@@ -581,45 +924,8 @@ namespace eval odfi::h2dl {
 
                     ## Copy and detach
                     ################
-                    set nio [$it copy]
-
-                    $nio clearParents
-                    $nio clearChildren
-
-                    ## Rebuild 
-                    $nio +build
-
-                    ## Add to current node 
-                    $newInstance addChild $nio
-
-                    ## Set base IO as parent to find back original definition later
-                    $nio addParent $it
-
-                    ## Res Set IO as class variable again
-                    $newInstance object variable -accessor public [$nio name get] $nio
-
-                    ## Transfer Existing Connections 
-                    ################
-                    ::ignore {
-                        $it shade odfi::h2dl::Connection eachChild {
-                        {conn i} => 
-                        if {[$conn parent]==$it} {
-                            $conn detach
-                            $nio addChild $conn 
-                        } else {
-                            $conn clearChildren
-                            $conn addChild $nio
-                        }
-                    }
-                    }
-
-                    ## Transfer Attributes 
-                    ###############
-                    $it shade odfi::attributes::AttributeGroup eachChild {
-                        {attrs i} => 
-                        #puts "Found Attributes Container on base IO"
-                        $nio addChild $attrs
-                    }   
+                    :transferIOToInstance $newInstance $it 
+                      
                 }
                 #puts "EOF DO CREATE INSTANCE $name"
                 return $newInstance
@@ -661,7 +967,7 @@ namespace eval odfi::h2dl {
                +mixin WritableSignal               
             }
             
-            :IO.inout name {
+            :inout : IO name {
                 +expose  name
                 +exposeToObject name  
                 +mixin WritableSignal           
@@ -678,6 +984,26 @@ namespace eval odfi::h2dl {
 
             }
             
+            ## Power Connections
+            #############
+            :power : IO name {
+                +expose name  
+                +var value GND
+                
+                +builder {
+                    set :type power
+                }
+                
+               
+            
+            }
+            ## Signals helpers
+            ############
+            +method onSignals {match cl} {
+                [:shade ::odfi::h2dl::Signal findChildrenByProperty name $match] foreach $cl
+                
+            }
+            
             ## IO Connection
             ##############
             
@@ -685,13 +1011,227 @@ namespace eval odfi::h2dl {
             
             +method connect {ioName keywork signal} {
                 
+                ## Left Connect
+                ##########
+                set left [::odfi::flist::MutableList new ]
+                set leftSize 0
+                [:shade ::odfi::h2dl::IO findChildrenByProperty name $ioName] foreach {
+                    $left += $it
+                    incr leftSize [$it width get]
+                }
+                puts "Left: [$left size] "
+                
+                #if {[string first * $ioName]>=0} {
+                #    
+                #} else {
+                #    $left += $ioName
+                #}
+                
+               
+                ## Right Size
+                ## Right can be a search match too
+                #######
+                if {![::odfi::common::isObject $signal]} {
+                    set right [uplevel [list :shade ::odfi::h2dl::Signal findChildrenByProperty name $signal ]]
+                    set right [$right asTCLList]
+                    set rightSize 0
+                    foreach r $right { incr rightSize [$r width get]}
+                    puts "Right: [llength $right] $right"
+                } else {
+                
+                    set right $signal  
+                }
+                
+                ## Right can be an expression
+                ############
+                if {[$right isClass ::odfi::h2dl::ast::ASTNode]} {
+                    
+                    $left foreach {
+                        $it connection $right
+                    }
+                    return
+                } else {
+                    set rightSize [$signal width get]
+                }
+                
+                
+                ## Checks
+                #############
+                if {$leftSize!=$rightSize} {
+                    error "Cannot connect  $ioName to $signal, bit sizes differ (left=$leftSize,right=$rightSize)"
+                }
+                
+                ## Cases:
+                ## Left has less signals than right
+                if {[$left size]<=[llength $right]} {
+                    
+                    set rightIndex 0
+                    $left foreach {
+                        {leftSignal leftI} => 
+                            repeat [expr [llength $right]/[$left size]] {
+                                
+                                $leftSignal connection [lindex $right $rightIndex]
+                                
+                                incr rightIndex
+                            }
+                    }
+                    
+                } else {
+                    
+                    ## Go over left, and connect to right bits
+                    set currentRight 0
+                    set currentRightBit 0
+                    $left foreach {
+                       {io i} => 
+                       
+                            set rightSignal [lindex $right $currentRight]
+                            
+                       
+                           if {[$rightSignal width get]==1} {
+                               $io connection $rightSignal
+                               incr currentRight
+                               set currentRightBit 0
+                           } else {
+                               $io connection [$rightSignal bit $currentRightBit]
+                               incr currentRightBit
+                               if {$currentRightBit>[$rightSignal width get]} {
+                                 incr currentRight
+                                 set currentRightBit 0
+                               }
+                           }
+                          
+                    }
+                    #error "Left has more signals than right, not supported yet"
+                }
+                
+                return
+                if {[$left size]!=$rightSize} {
+                    error "Cannot connect $ioName to $signal, size differ (left=[$left size],right=$rightSize)"
+                }
+                
+                $left foreach {
+                    {io i} => 
+                    if {[$signal width get]==1} {
+                        $io connection $signal
+                    } else {
+                        $io connection [$signal bit $i]
+                    }
+                       
+                }
+                
+                return
+                
                 set io [:shade ::odfi::h2dl::IO findChildByProperty name $ioName]
                 if {$io==""} {
-                    error "Cannot Connection io $ioName from [:name get] , not found"
+                    error "Cannot Connect io $ioName from [:name get] , not found"
                 } else {
                     $io connection $signal
                 }
                 
+            }
+            
+            +method connectMap map {
+                
+                foreach {io KW target} $map {
+                    
+                    ## Get io
+                    set foundIO [:getIO $io] 
+                    if {$foundIO==""} {
+                        :log:warning "Cannot map connection $io, not found"
+                    }
+                    
+                    ## Subst target
+                    set target [subst $target]
+                    
+                    $foundIO connection $target
+                    
+                    
+                }
+            
+            }
+            
+            ## Creates Wires in parent context for non connected IOs, and connect to them
+            +method wiresForNotConnected args {
+                
+                set target [:parent]
+                :shade ::odfi::h2dl::IO eachChild {
+                    
+                    if {![$it hasConnection]} {
+                        set w [$target wire [:name get]_[$it name get] [list :width set [$it width get]  ] ]
+                        uplevel 2 set [:name get]_[$it name get] $w
+                        $it connection $w
+                    }
+                    
+                }
+                
+            }
+            
+            +method pushUpAll filter {
+                
+                ## Source and target
+                set sourceModule [current object]
+                
+                ## Get Parent Module
+                set targetParent [$sourceModule shade ::odfi::h2dl::Module parent]
+                
+                if {$targetParent==""} {
+                    :log:warn "Cannot call push up All if no parent module is present"
+                    return
+                }
+                
+                ## Get selection
+                puts "filter: $filter"
+                set selection [[:shade ::odfi::h2dl::IO children] filter $filter]
+                
+                if {[$selection size]==0} {
+                    :log:warn "Cannot call push up All if no IOs match selection $filter"
+                }
+                
+                puts "Processing push all into [$targetParent name get]..."
+                ## FOreach in selection, look in parent IOs for a match
+                ## Do this reverse to go once through parent IO and pop out of selection the found items
+                ## This way we only go through a decreasing list repeatidely
+                ## This function should be performant enough
+                set targetIOS [$targetParent shade ::odfi::h2dl::IO children]
+                $targetIOS foreach {
+                    {targetIO i} => 
+                        
+                        ## Search in selection for io with same name
+                        set found [$selection findOption {expr {[$it name get] == [$targetIO name get]}} -remove true]
+                        puts "Found: [$found isDefined] -> selection size now=[$selection size]"
+                        
+                        ## If found, match directions and sizes
+                        if {[$found isDefined]} {
+                            $targetIO matchDirection    [$found get]
+                            $targetIO width set         [[$found get] width get]
+                        }
+                        
+                }
+                
+                ## Selection has now a remaining set of IOS to create
+                $selection foreach {
+                    {createIO i} => 
+                        
+                        puts "Creating [$createIO name get] into parent"
+                        
+                        ## Copy  into parent
+                        set newIO [$createIO copyInto $targetParent]
+                        
+                        ## Make connection
+                        $createIO connection $newIO
+                     
+                }
+               
+                
+                
+            }
+            
+            
+            +method getIO name {
+                return [:shade ::odfi::h2dl::IO findChildByProperty name $name]
+            }
+            +method findAllIO match {
+                return [:shade ::odfi::h2dl::IO findChildrenByProperty name $match]
             }
             
             ## Signals
@@ -720,64 +1260,70 @@ namespace eval odfi::h2dl {
             :+type SyncBlock : Logic  {
 
                 :reset signal {
-
+                    
                 }
-
-                +method doReset res {
+                
+                +method implementReset res {
+                    ## Setting Up Reset 
+                    puts "Setting up reset for Stage $res -------------------------"
                     #set :reset $res
                     :reset $res {
 
                     }
-                    :onBuildDone {
-
-                        ## Setting Up Reset 
-                        puts "Setting up reset for Stage-------------------------"
-
-                        ## Content 
-                        #set content [:shade odfi::h2dl::ast::ASTNode children]
-                        set content [:shade {$it notClass odfi::h2dl::Reset} children]
-                         $content foreach {
-                                $it detachFrom [current object] 
-                        }
-                        
-                        #$fullContent foreach {
-                        #    puts "Full Content to move: [$it info class]"
-                        #}
-                        
-                        ## Add Reset Values for Registers  to Reset if 
-                        ## Rest of the logic for the else node
-                        :if {<% return $res %> == 0} {
-
-                            set alreadyReset {}
-                            $content foreach {
-
-                                
-
-                                ## Search in content for all the NB assign to put them as reset value 
-                                $it walkDepthFirstPostorder -level 1 {
-                                    if {[$node isClass odfi::h2dl::ast::ASTNonBlockingAssign]} {
-
-                                        ## If the target value is already a child of current if, do nothing 
-                                        if {[lsearch $alreadyReset [$node firstChild]]==-1} {
-                                            [$node firstChild] <= 0
-                                            lappend alreadyReset [$node firstChild]
-                                        
-                                        }
-                                        return false 
-                                        
+                    
+                    ## Content 
+                    #set content [:shade odfi::h2dl::ast::ASTNode children]
+                    set content [:shade {$it notClass odfi::h2dl::Reset} children]
+                     $content foreach {
+                        $it detachFrom [current object] 
+                    }
+                    
+                    #$fullContent foreach {
+                    #    puts "Full Content to move: [$it info class]"
+                    #}
+                    
+                    ## Add Reset Values for Registers  to Reset if 
+                    ## Rest of the logic for the else node
+                    :if {$res == 0} {
+    
+                        set alreadyReset {}
+                        $content foreach {
+    
+                            
+    
+                            ## Search in content for all the NB assign to put them as reset value 
+                            $it walkDepthFirstPostorder -level 1 {
+                                if {[$node isClass odfi::h2dl::ast::ASTNonBlockingAssign]} {
+    
+                                    ## If the target value is already a child of current if, do nothing 
+                                    if {[lsearch $alreadyReset [$node firstChild]]==-1} {
+                                        [$node firstChild] <= 0
+                                        lappend alreadyReset [$node firstChild]
+                                    
                                     }
-                                    return true
+                                    return false 
+                                    
                                 }
-                                
+                                return true
                             }
+                            
                         }
-                        :else {
-                            $content foreach {
-                                #$it detachFrom 
-                                #puts "Setting first parent: [$it info class] [[current object] info class]"
-                                $it setFirstParent [current object]
-                            }
+                    }
+                    :else {
+                        $content foreach {
+                            #$it detachFrom 
+                            #puts "Setting first parent: [$it info class] [[current object] info class]"
+                            $it setFirstParent [current object]
                         }
+                    }
+                
+                }
+
+                +method doReset res {
+                    
+                    :onBuildDone {
+                        :implementReset <% return $res %>
+                       
                     }
                 }
             }

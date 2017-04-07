@@ -1,11 +1,11 @@
 package edu.kit.ipe.adl.h2dl.techfiles.lib
 
-import edu.kit.ipe.adl.indesign.core.harvest.Harvester
-import edu.kit.ipe.adl.indesign.core.harvest.fs.HarvestedFile
-import edu.kit.ipe.adl.indesign.tcl.nx.NXObject
-import edu.kit.ipe.adl.indesign.tcl.module.TCLModule
+import org.odfi.indesign.core.harvest.Harvester
+import org.odfi.indesign.core.harvest.fs.HarvestedFile
+import org.odfi.tcl.nx.NXObject
+import org.odfi.tcl.module.TCLModule
 
-class LibFileHarvester extends Harvester {
+object LibFileHarvester extends Harvester {
 
   this.onDeliverFor[HarvestedFile] {
     case f if (f.path.toFile.getCanonicalPath.endsWith(".lib")) =>
