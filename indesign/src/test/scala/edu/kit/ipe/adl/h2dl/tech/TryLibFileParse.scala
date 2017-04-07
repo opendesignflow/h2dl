@@ -1,14 +1,14 @@
-package edu.kit.ipe.adl.h2dl.tech
+package org.odfi.eda.h2dl.tech
 
 import org.odfi.indesign.core.harvest.fs.HarvestedFile
-import edu.kit.ipe.adl.h2dl.techfiles.lib.LibFile
+import org.odfi.eda.h2dl.techfiles.lib.LibFile
 import java.io.File
 import org.odfi.indesign.core.brain.Brain
-import edu.kit.ipe.adl.h2dl.H2DLModule
+import org.odfi.eda.h2dl.H2DLModule
 import org.odfi.tcl.module.TCLModule
 import org.odfi.indesign.core.harvest.Harvest
-import edu.kit.ipe.adl.h2dl.tool.rsync.RsyncTool
-import edu.kit.ipe.adl.h2dl.tool.rsync.RsyncToolHarvester
+import org.odfi.eda.h2dl.tool.rsync.RsyncTool
+import org.odfi.eda.h2dl.tool.rsync.RsyncToolHarvester
 
 object TryLibFileParse extends App {
 

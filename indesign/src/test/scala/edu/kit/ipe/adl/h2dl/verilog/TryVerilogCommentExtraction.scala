@@ -1,5 +1,6 @@
-package edu.kit.ipe.adl.h2dl.verilog
+package org.odfi.eda.h2dl.verilog
 
+import org.odfi.eda.h2dl.verilog.VerilogFile;
 import org.odfi.indesign.core.harvest.fs.HarvestedFile
 import java.io.File
 

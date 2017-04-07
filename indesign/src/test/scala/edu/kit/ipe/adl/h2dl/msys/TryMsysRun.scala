@@ -1,7 +1,7 @@
-package edu.kit.ipe.adl.h2dl.msys
+package org.odfi.eda.h2dl.msys
 
-import edu.kit.ipe.adl.h2dl.tool.msys.MsysHarvester
-import edu.kit.ipe.adl.h2dl.tool.msys.MsysInstall
+import org.odfi.eda.h2dl.tool.msys.MsysHarvester
+import org.odfi.eda.h2dl.tool.msys.MsysInstall
 import java.io.File
 
 object TryMsysRun extends App {

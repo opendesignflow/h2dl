@@ -1,5 +1,6 @@
-package edu.kit.ipe.adl.h2dl.verilog
+package org.odfi.eda.h2dl.verilog
 
+import org.odfi.eda.h2dl.verilog.VerilogSourceString;
 import org.scalatest.FunSuite
 import com.idyria.osi.tea.io.TeaIOUtils
 
