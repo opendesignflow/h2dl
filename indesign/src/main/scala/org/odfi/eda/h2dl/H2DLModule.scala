@@ -12,10 +12,11 @@ import org.odfi.eda.h2dl.tool.icarus.ICarusHarvester
 import org.odfi.eda.h2dl.tool.rsync.RsyncToolHarvester
 
 import org.odfi.eda.h2dl.project.H2DLProjectHarvester
-import org.odfi.eda.h2dl.tool.sphynx.SphynxProjectHarvester
+import org.odfi.eda.h2dl.tool.sphinx.SphinxProjectHarvester
 import org.odfi.eda.h2dl.tool.msys.MsysHarvester
 import org.odfi.indesign.core.harvest.fs.FileSystemHarvester
 import org.odfi.indesign.core.harvest.fs.FSGlobalWatch
+import org.odfi.eda.h2dl.tool.sphinx.SphinxProjectHarvester
 
 object H2DLModule extends IndesignModule {
 
@@ -38,7 +39,7 @@ object H2DLModule extends IndesignModule {
     //Harvest --> H2DLProjectHarvester
     Harvest.addHarvester(FileSystemHarvester)
     FileSystemHarvester --> H2DLProjectHarvester
-    H2DLProjectHarvester --> SphynxProjectHarvester
+    H2DLProjectHarvester --> SphinxProjectHarvester
     Harvest --> MsysHarvester
 
     //H2DLProjectHarvester --> (new ExternalToolHarvester)
