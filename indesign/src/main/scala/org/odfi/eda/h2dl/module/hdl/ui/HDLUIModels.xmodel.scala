@@ -6,7 +6,6 @@ import com.idyria.osi.ooxoo.model.producers
 import com.idyria.osi.ooxoo.model.producer
 import com.idyria.osi.ooxoo.model.out.scala.ScalaProducer
 import com.idyria.osi.ooxoo.model.out.markdown.MDProducer
-import org.odfi.indesign.ide.core.sources.outline.OutlineOutlineSection
 import com.idyria.osi.ooxoo.core.buffers.structural.io.sax.STAXSyncTrait
 import com.idyria.osi.ooxoo.lib.json.JSonUtilTrait
 import org.odfi.indesign.ide.core.sources.outline.Outline
