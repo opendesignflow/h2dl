@@ -5,6 +5,7 @@ import java.io.File
 import org.odfi.indesign.core.harvest.Harvester
 import org.odfi.indesign.core.harvest.fs.HarvestedFile
 import org.odfi.indesign.core.module.process.IDCommand
+import org.odfi.indesign.core.module.process.IDProcess
 
 object MsysHarvester extends Harvester {
 
@@ -88,7 +89,13 @@ class MsysInstall(f: File) extends HarvestedFile(f.toPath) {
     folder.getCanonicalPath.replace(File.separator, "/").replaceAll("([A-Z]):", "/$1")
   }
 
-  def runBashCommand(runFolder: File, command: String, inheritIO: Boolean = true) = {
+  def runBashCommand(command: String, inheritIO: Boolean)  : IDProcess =  {
+    runBashCommand(new File(""),command,inheritIO)
+
+  }
+
+  
+  def runBashCommand(runFolder: File, command: String, inheritIO: Boolean = true) : IDProcess = {
 
     var commandArgs = Array("bash", "-lc", s"cd ${folderToMsysPath(runFolder)} && $command")
     runCommand(runFolder, commandArgs, inheritIO)
