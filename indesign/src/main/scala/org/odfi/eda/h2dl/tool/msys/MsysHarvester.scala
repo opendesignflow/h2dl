@@ -13,7 +13,7 @@ object MsysHarvester extends Harvester {
 
     // Look in obvious paths
     //-------------
-    var stdInstall = new File("""C:\msys64\mingw64.exe""")
+    var stdInstall = new File("""C:\msys64\""")
     stdInstall.exists() match {
       case true =>
         gather(new MsysInstall(stdInstall.getParentFile))
@@ -26,9 +26,9 @@ object MsysHarvester extends Harvester {
 
 class MsysInstall(f: File) extends HarvestedFile(f.toPath) {
 
-  var mingw64Path = new File(f, "mingw64.exe")
+  /*var mingw64Path = new File(f, "mingw64.exe")
 
-  var mgw64Command = new IDCommand(mingw64Path)
+  var mgw64Command = new IDCommand(mingw64Path)*/
 
   val searchPaths = List("/usr/bin", "/mingw64/bin")
 
