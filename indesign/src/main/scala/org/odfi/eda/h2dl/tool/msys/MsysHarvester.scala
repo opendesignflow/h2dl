@@ -13,10 +13,10 @@ object MsysHarvester extends Harvester {
 
     // Look in obvious paths
     //-------------
-    var stdInstall = new File("""C:\msys64\""")
+    var stdInstall = new File("""C:\msys64\""").getCanonicalFile
     stdInstall.exists() match {
       case true =>
-        gather(new MsysInstall(stdInstall.getParentFile))
+        gather(new MsysInstall(stdInstall))
       case false =>
     }
 

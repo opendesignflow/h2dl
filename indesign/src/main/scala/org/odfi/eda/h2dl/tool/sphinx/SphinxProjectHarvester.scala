@@ -60,12 +60,14 @@ class SphinxProject(f: HarvestedFile) extends DefaultBuildableProjectFolder(f.pa
             install.runBashCommand(path.toFile(), s"""make $makeTargets """, true)
 
           case None =>
+            println("No Sphinx Build")
             logInfo[SphinxProject]("Bootstraping Sphynx for MSYS2")
             sys.error("Need to implement bootstrap")
 
         }
 
       case None =>
+        println("No MSYS")
         sys.error("Msys is required to build Sphynx Project")
     }
   }
