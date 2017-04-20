@@ -192,6 +192,26 @@ class VerilogFile(f: HarvestedFile) extends HarvestedFile(f.path) with CrossRefe
     }
 
   }
+  
+  // Find Signal Connection
+  //------------
+  
+  def findSignalConnection(signalName:String) = {
+    
+    //println("Loogin for signal: "+signalName)
+    
+    val regexpStr = s"\\.([\\w_]+)\\(${signalName.replace("[","\\[").replace("]","\\]")}\\)"
+    val regexp = regexpStr.r
+    
+    this.getLines.collectFirst {
+      case l if (regexp.findFirstMatchIn(l).isDefined) => regexp.findFirstMatchIn(l).get
+    } match {
+      case Some(m) =>
+        Some(m.group(1))
+      case None => 
+        None
+    }
+  }
 
   // Listening
   //-----------------
