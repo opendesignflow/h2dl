@@ -94,6 +94,42 @@ class MsysInstall(f: File) extends HarvestedFile(f.toPath) {
 
   }
 
+  def prepareBashCommand(runFolder: File, command: String, inheritIO: Boolean = true) : IDProcess = {
+
+    var commandArgs = Array("bash", "-lc", s"cd ${folderToMsysPath(runFolder)} && $command")
+    prepareCommand(runFolder, commandArgs, inheritIO)
+
+  }
+
+  def prepareCommand(runFolder: File, args: Array[String], inheritIO: Boolean = true,env:Map[String,String]=Map()) = {
+
+    var command = args(0)
+    var arguments = args.drop(1)
+
+    findCommand(command) match {
+      case Some(commandFile) =>
+
+        var realCommand = new IDCommand(commandFile)
+
+        
+        
+        var process = realCommand.createToolProcess(arguments, runFolder)
+        
+        process.processBuilder.environment().put("MSYSTEM", "MINGW64")
+        
+        inheritIO match {
+          case true =>
+            process.inheritIO
+          case false =>
+        }
+
+        process
+      case None =>
+        sys.error(s"Cannot run command '$command' , not found")
+    }
+
+  }
+  
   
   def runBashCommand(runFolder: File, command: String, inheritIO: Boolean = true) : IDProcess = {
 
@@ -102,7 +138,7 @@ class MsysInstall(f: File) extends HarvestedFile(f.toPath) {
 
   }
 
-  def runCommand(runFolder: File, args: Array[String], inheritIO: Boolean = true) = {
+  def runCommand(runFolder: File, args: Array[String], inheritIO: Boolean = true,env:Map[String,String]=Map()) = {
 
     var command = args(0)
     var arguments = args.drop(1)

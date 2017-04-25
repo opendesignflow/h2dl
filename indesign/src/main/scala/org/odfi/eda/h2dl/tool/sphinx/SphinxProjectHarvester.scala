@@ -31,15 +31,36 @@ class SphinxProject(f: HarvestedFile) extends DefaultBuildableProjectFolder(f.pa
 
   var forceRebuild = false
 
-  this.onProcess {
-
-  }
-
-  this.onClean {
-    FSGlobalWatch.watcher.cleanFor(this)
-  }
 
   def getBuildHTMLOutput = new File(path.toFile(), "build" + File.separator + "html")
+
+  def createBuildCommand = {
+
+    MsysHarvester.getResource[MsysInstall] match {
+
+      case Some(install) =>
+
+        install.findCommand("sphinx-build") match {
+          case Some(ok) =>
+
+            var makeTargets = "html"
+            if (forceRebuild)
+              makeTargets = "clean html"
+
+            Some(install.prepareBashCommand(path.toFile(), s"""make $makeTargets """, true))
+
+          case None =>
+            println("No Sphinx Build")
+            logInfo[SphinxProject]("Bootstraping Sphynx for MSYS2")
+            None
+
+        }
+
+      case None =>
+        println("No MSYS")
+        None
+    }
+  }
 
   override def buildStandard = {
     MsysHarvester.getResource[MsysInstall] match {
@@ -72,7 +93,7 @@ class SphinxProject(f: HarvestedFile) extends DefaultBuildableProjectFolder(f.pa
     }
   }
 
-  def buildLiveCompiler = {
+  override def buildLiveCompilers = {
     this.getLiveCompiler[SphinxLiveCompiler] match {
       case None =>
         this.addLiveCompiler(new SphinxLiveCompiler(this))
@@ -91,7 +112,25 @@ class SphinxLiveCompiler(val project: SphinxProject) extends LiveCompiler {
 
         // if(f.getName.endsWith(".rst") || f.getName.endsWith(".html"))
         println("################# REbuild sphynx #################")
-        project.runBuildStard.waitForDone
+        MsysHarvester.getResource[MsysInstall] match {
+          case Some(install) =>
+
+            project.createBuildCommand match {
+              case Some(command) =>
+
+                this.lcEnvironment.foreach {
+                  case(n,v) =>
+                    println("Using ENV: "+n+" -> "+v)
+                    command.processBuilder.environment().put(n,v)
+                }
+                command.startProcessAndWait
+                println("################# Done #################")
+              case None =>
+            }
+
+          case None =>
+        }
+
       //runBuildStard.waitForDone
 
       case other =>
