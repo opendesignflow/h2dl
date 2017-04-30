@@ -1844,7 +1844,7 @@ namespace eval odfi::h2dl {
 
             ## Create Expression node 
             set expressionNode [::odfi::h2dl::ast::buildAST $args]
-            $expressionNode  object mixins add odfi::flextree::utils::StdoutPrinter
+            #$expressionNode  object mixins add odfi::flextree::utils::StdoutPrinter
 
             #puts "NB expression: [$expressionNode info class]"
 
