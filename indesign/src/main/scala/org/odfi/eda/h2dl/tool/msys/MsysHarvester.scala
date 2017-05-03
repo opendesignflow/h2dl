@@ -6,6 +6,19 @@ import org.odfi.indesign.core.harvest.Harvester
 import org.odfi.indesign.core.harvest.fs.HarvestedFile
 import org.odfi.indesign.core.module.process.IDCommand
 import org.odfi.indesign.core.module.process.IDProcess
+import org.odfi.indesign.core.module.IndesignModule
+import org.odfi.indesign.core.harvest.Harvest
+
+
+object MsysModule extends IndesignModule {
+  
+  this.onInit {
+    Harvest.addHarvester(MsysHarvester)
+  }
+  
+  
+}
+
 
 object MsysHarvester extends Harvester {
 
