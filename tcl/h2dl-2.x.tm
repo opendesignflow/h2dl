@@ -461,7 +461,7 @@ namespace eval odfi::h2dl {
                 +builder {
 
                     #puts "Buildign IO connections of [:name get] with ${:signal} "
-                    set baseSignal [:parent]
+                    ::set baseSignal [:parent]
 
                     ## Options:
                     ##   - Target signal already has a connection, then take the name 
@@ -474,8 +474,8 @@ namespace eval odfi::h2dl {
                     ###########
                     if {[catch {${:signal} isClass ::odfi::h2dl::Signal} res]} {
                         #puts "Connection by string -> $res"
-                        set n ${:signal}
-                        set :signal [::odfi::h2dl::Signal new]
+                        ::set n ${:signal}
+                        ::set :signal [::odfi::h2dl::Signal new]
                         ${:signal} name set $n 
                         ${:signal} attribute ::odfi::h2dl::dummy true 
                     }
@@ -525,13 +525,13 @@ namespace eval odfi::h2dl {
                             if {[${:signal} parent]!="" && ([[$baseSignal parent] getPrimaryTreeDepth] == [[${:signal} parent] getPrimaryTreeDepth])} {
                                 
                                 if {[[${:signal} parent] name get]==""} {
-                                    set :name [${:signal} name get]
+                                    ::set :name [${:signal} name get]
                                 } else {
-                                    set :name [[${:signal} parent] name get]_[${:signal} name get]
+                                    ::set :name [[${:signal} parent] name get]_[${:signal} name get]
                                 }
                                
                             } else {
-                                set :name [${:signal} name get]
+                                ::set :name [${:signal} name get]
                                 #set :name [[${:signal} parent] name get]_[$signal name get]
     
                                 
@@ -551,44 +551,7 @@ namespace eval odfi::h2dl {
                         } else {
                             # Use as is
                             set :name ${:signal}
-                        }
-                        ## Check Signal 
-                        #if {[[:parent]}
-                        
-                        ## Use name to make sure the containing module has a signal for connection
-                        ##############
-                        ::ignore {
-                            if {[::odfi::common::isObject [:name get]]} {
-                                
-                                set  target [:name get]
-                                if {[$target isClass ::odfi::h2dl::Bit]} {                 
-                                    set target [$target parent]  
-                                } elseif {[$target isClass ::odfi::h2dl::ast::ASTRangeSelect]} {            
-                                    set rangeTarget [$target firstChild]
-                                    set target      $rangeTarget         
-                                }
-                                
-                                ## Check there is a signal for target in parent
-                                set module [[[:parent] parent] getParentModule]
-                                set signal [$module shade ::odfi::h2dl::Signal findChildByProperty name [$target name get]]
-                                if {$signal==""} {
-                                     puts "Adding Signal  [$target name get] for connection in module [$module name get]"
-                                     $module wire [$target name get] {
-                                        :width set  [$target width get]
-                                    }
-                                }
-                            } else {
-                                ## Check there is a signal for target in parent
-                                set module [[[:parent] parent] getParentModule]
-                                set signal [$module shade ::odfi::h2dl::Signal findChildByProperty name  [:name get]]
-                                if {$signal==""} {
-                                     puts "Adding Signal  [:name get] for connection in module [$module name get]"
-                                     $module wire [:name get] {
-                                    }
-                                }
-                                
-                            }
-                        }
+                        } 
                     
                     }
 
@@ -633,27 +596,28 @@ namespace eval odfi::h2dl {
             ## For now, just push up to parent
             +method pushUp {{prefix ""} {cl ""} } {
 
-                set sourceParent [:parent]
-                set source [current object]
-                set targetParent [$sourceParent shade ::odfi::h2dl::Module parent]
+                puts "begin pushup"
+                ::set sourceParent [:parent]
+                ::set source [current object]
+                ::set targetParent [$sourceParent shade ::odfi::h2dl::Module parent]
 
                 #puts "Push up of IO with name [$source name get]"
                 #puts "push to target parent: $targetParent, source parent: $sourceParent"
                 
-                set resultSignal ""
+                ::set resultSignal ""
                 if {$targetParent!=""} {
                     
                     ## Look if exsiting in parent
 
                     ## If Existing into parent, force our direction
                     ## Target in parent has either the same name of an equivalent attribute
-                    set iosearchtime [time {
-                        set ios [$targetParent shade ::odfi::h2dl::IO children]
+                    ::set iosearchtime [time {
+                        ::set ios [$targetParent shade ::odfi::h2dl::IO children]
                         
                     }]
-                    set searchtime [time {
+                    ::set searchtime [time {
                        
-                        set inParent [$ios findOption {
+                        ::set inParent [$ios findOption {
                             if {([$it name get] == [$source name get]) || [$it attributeMatch ::odfi::h2dl name [$source name get]] } {
                                 return true
                             } else {
@@ -667,16 +631,16 @@ namespace eval odfi::h2dl {
                     
                     if {[$inParent isDefined]} {
                         
-                        set inParentIO [$inParent get]
+                        ::set inParentIO [$inParent get]
                         $inParentIO width set [:width get]
                         $inParentIO matchDirection $source
-                        set  resultSignal $inParentIO
+                        ::set  resultSignal $inParentIO
                         
                     } else {
                     
                         ## Copy IO 
-                        
-                        set   resultSignal   [[current object] copy]
+                        #puts "copying....."
+                        ::set   resultSignal   [[current object] copy]
                         $resultSignal name set [[current object] name get]
                        
                         puts "Target new IO has name  1 [$resultSignal name get] [$resultSignal info class]"

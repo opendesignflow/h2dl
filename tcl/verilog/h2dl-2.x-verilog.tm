@@ -1003,57 +1003,7 @@ namespace eval odfi::h2dl::verilog {
                         ## Add to f
                         $fFileStream << [file normalize ${outputFolder}/[$node name get].v]
     
-                        ## Add Companion sources 
-                        ## - Copy to output 
-                        ## - Add to .f for verilog/vhdl files
-                        if {[$node hasAttribute ::odfi::verilog companions]} {
-                            foreach companion [$node getAttribute ::odfi::verilog companions] {
-                                
-                                set sourceFile [lindex $companion 0]
-                                if {[llength $companion]>1} {
 
-                                    ## Write source to target file
-                                    set targetFile ${outputFolder}/$sourceFile
-                                    odfi::files::writeToFile $targetFile [lindex $companion 1]
-
-                                } else {
-                                    if {![file exists $sourceFile]} {
-                                        error "Cannot Copy Companion source file $sourceFile of [$node name get] because the file does not exist"
-                                    } else {
-                                    
-                                        ## Before copying check timestamps
-                                        ## First Check existing file and its timestamp
-                                        set targetFile ${outputFolder}/[file tail $sourceFile]
-                                        set allowCopy true
-                                        
-                                        if {$existingTimeStamp>0 && [file exists $targetFile]} {
-                                            
-                                            set lastModified [file mtime $targetFile ]
-                                         
-                                            ## If modified after last generation, make backup and warning
-                                            if {$lastModified>$existingTimeStamp} {
-                                                odfi::log::warn "File $targetFile was copied as companion and modified after copy, nothing will be done for this file but a copy was saved"
-                                                file copy -force $targetFile ${targetFile}.genbackup
-                                                set allowCopy false
-                                            }
-                                        }
-                                        
-                                        ## Normal copy then
-                                        if {$allowCopy} {
-                                            file copy -force $sourceFile $targetFile
-                                        }
-                                        
-        
-                                        ## Add to .f if necessary
-                                        if {[string match "*.v" $sourceFile] || [string match "*.vhdl" $sourceFile] || [string match "*.vhd" $sourceFile] || [string match "*.sv" $sourceFile]} {
-                                            $fFileStream << [file normalize ${outputFolder}/[file tail $sourceFile]]
-                                        }
-                                    }
-                                }
-
-                                
-                            }
-                        }
     
                         ::set __r ""
                     
@@ -1073,6 +1023,66 @@ namespace eval odfi::h2dl::verilog {
                     
                     ## Produce results for other cases
                     ::set __r [$node verilog:reduce $parent $results]
+                }
+
+                ## Add Companion sources 
+                ## - Copy to output 
+                ## - Add to .f for verilog/vhdl files
+                if {[$node isClass odfi::h2dl::Module] && [$node hasAttribute ::odfi::verilog companions]} {
+
+                    puts "********* HAS COMPANIONS ******"
+                    foreach companion [$node getAttribute ::odfi::verilog companions] {
+                        
+                        puts "********* HAS COMPANION -> [llength $companion] ******"
+                        set sourceFile [lindex $companion 0]
+                        if {[llength $companion]>1} {
+
+                            ## Write source to target file
+                            set targetFile ${outputFolder}/$sourceFile
+                            odfi::files::writeToFile $targetFile [lindex $companion 1]
+
+                            ## Add to .f if necessary
+                            if {[string match "*.v" $sourceFile] || [string match "*.vhdl" $sourceFile] || [string match "*.vhd" $sourceFile] || [string match "*.sv" $sourceFile]} {
+                                $fFileStream << [file normalize ${outputFolder}/[file tail $sourceFile]]
+                            }
+
+                        } else {
+                            if {![file exists $sourceFile]} {
+                                error "Cannot Copy Companion source file $sourceFile of [$node name get] because the file does not exist"
+                            } else {
+                            
+                                ## Before copying check timestamps
+                                ## First Check existing file and its timestamp
+                                set targetFile ${outputFolder}/[file tail $sourceFile]
+                                set allowCopy true
+                                
+                                if {$existingTimeStamp>0 && [file exists $targetFile]} {
+                                    
+                                    set lastModified [file mtime $targetFile ]
+                                 
+                                    ## If modified after last generation, make backup and warning
+                                    if {$lastModified>$existingTimeStamp} {
+                                        odfi::log::warn "File $targetFile was copied as companion and modified after copy, nothing will be done for this file but a copy was saved"
+                                        file copy -force $targetFile ${targetFile}.genbackup
+                                        set allowCopy false
+                                    }
+                                }
+                                
+                                ## Normal copy then
+                                if {$allowCopy} {
+                                    file copy -force $sourceFile $targetFile
+                                }
+                                
+
+                                ## Add to .f if necessary
+                                if {[string match "*.v" $sourceFile] || [string match "*.vhdl" $sourceFile] || [string match "*.vhd" $sourceFile] || [string match "*.sv" $sourceFile]} {
+                                    $fFileStream << [file normalize ${outputFolder}/[file tail $sourceFile]]
+                                }
+                            }
+                        }
+
+                        
+                    }
                 }
                 
                 return $__r
