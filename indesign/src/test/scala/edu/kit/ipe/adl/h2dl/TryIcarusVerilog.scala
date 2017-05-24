@@ -1,4 +1,4 @@
-package edu.kit.ipe.adl.h2dl
+package org.odfi.eda.h2dl
 /*
 import org.odfi.tcl.indesign.module.maven.MavenModule
 import org.odfi.tcl.indesign.core.brain.Brain
