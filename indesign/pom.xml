@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.odfi.eda.h2dl</groupId>
 	<artifactId>h2dl-module</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>H2DL Indesign Module</name>
 	<parent>
 		<groupId>org.odfi</groupId>
