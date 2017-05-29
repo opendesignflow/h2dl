@@ -16,6 +16,10 @@ trait H2DLLibView  extends IndesignIDELibView {
             }
           case None => 
         }
+        
+        script(createAssetsResolverURI("/h2dl/h2dl.js")) {
+
+        }
 
       }
   }

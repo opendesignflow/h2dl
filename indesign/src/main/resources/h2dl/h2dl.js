@@ -1,3 +1,7 @@
+var h2dl = {
+		
+}
+/*
 $(function() {
 	
 	$('.menu.tabular .item')
@@ -11,4 +15,4 @@ $(function() {
 	
 	$('.table.sortable').tablesort();
 	
-});
+});*/
