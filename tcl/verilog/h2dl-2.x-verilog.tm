@@ -268,7 +268,7 @@ namespace eval odfi::h2dl::verilog {
             if {[$parent hasAttribute ::odfi::h2dl testbench]} {
                 set type logic
             }
-            set res "$type $size [:name get]; // AAGAGA"
+            set res "$type $size [:name get];"
         }
         
         
@@ -561,7 +561,7 @@ namespace eval odfi::h2dl::verilog {
         set left [lindex [$results at 0] 1]
         #set right [expr {[$results size]>1} ? {[lindex [$results at 1] 1]} : "{}"]
 
-        return "~ $left"
+        return "!$left"
     }
 
     defineReduce ::odfi::h2dl::ast::ASTConstant {
