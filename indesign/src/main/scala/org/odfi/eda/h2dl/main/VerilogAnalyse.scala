@@ -1,7 +1,7 @@
 package org.odfi.eda.h2dl.main
 
 import java.io.File
-
+/*
 import org.bridj.BridJ
 
 import com.idyria.osi.wsb.webapp.localweb.LocalWebEngine
@@ -32,7 +32,7 @@ import org.odfi.tcl.TclInterpreter
 
 
 
-/*
+
 object VerilogAnalyse extends App {
 
   // TLog.setLevel(classOf[Harvester],TLog.Level.FULL)
