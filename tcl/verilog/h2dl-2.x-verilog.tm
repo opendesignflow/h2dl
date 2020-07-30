@@ -1149,8 +1149,10 @@ namespace eval odfi::h2dl::verilog {
 
         }
 
-        package require odfi::dev::hw::rtl 1.0.0
+     
         :public method merge inFile {
+
+            package require odfi::dev::hw::rtl 1.0.0
 
             if {[file exists $inFile]} {
                 set fileContent [odfi::files::readFileContent $inFile]
