@@ -1,0 +1,12 @@
+{
+  "name": "h2dl",
+  "description": "TCL H2DL Language",
+  "authors": "author",
+  "version": "1.0.0",
+  "files": [
+    "tcl/*"
+  ],
+  "dependencies": {
+    "odfi-dev-tcl": "opendesignflow/odfi-dev-tcl#dev"
+  }
+}
